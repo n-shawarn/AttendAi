@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item active" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1 style="display:flex;align-items:center;gap:10px;"><i class="fas fa-chart-bar" style="color:var(--accent-blue);font-size:1.3rem;"></i> Attendance Analytics</h1>
+      <div class="top-bar-actions">
+        <button class="btn btn-success btn-sm" onclick="exportCSV()" style="display:flex;align-items:center;gap:6px;"><i class="fas fa-download"></i> Export CSV</button>
+      </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-card" style="margin-bottom:var(--space-xl);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:var(--space-md);align-items:end;">
+        <div class="form-group"><label class="form-label">Section</label><input class="form-input" id="fSection" placeholder="e.g. CSE-A"></div>
+        <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="fSubject" placeholder="e.g. Mathematics"></div>
+        <div class="form-group"><label class="form-label">From Date</label><input type="date" class="form-input" id="fFrom"></div>
+        <div class="form-group"><label class="form-label">To Date</label><input type="date" class="form-input" id="fTo"></div>
+        <button class="btn btn-primary" onclick="loadReport()" style="height:46px;display:flex;align-items:center;gap:6px;"><i class="fas fa-filter"></i> Apply</button>
+      </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div class="dashboard-grid" style="margin-bottom:var(--space-xl);" id="summaryCards">
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);"><i class="fas fa-list-check"></i></div><div class="stat-value" id="sumTotal">0</div><div class="stat-label">Total Records</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);"><i class="fas fa-user-check"></i></div><div class="stat-value" id="sumPresent">0</div><div class="stat-label">Present</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(244,63,94,0.12);color:var(--accent-rose);"><i class="fas fa-user-xmark"></i></div><div class="stat-value" id="sumAbsent">0</div><div class="stat-label">Absent</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple);"><i class="fas fa-chart-line" style="font-size:1.1rem;"></i></div><div class="stat-value" id="sumAvg">—</div><div class="stat-label">Avg Presence %</div></div>
+    </div>
+
+    <!-- Chart -->
+    <div class="glass-card" style="margin-bottom:var(--space-xl);">
+      <h2 style="margin-bottom:var(--space-lg);">Attendance Distribution</h2>
+      <div style="display:flex;gap:var(--space-xl);align-items:center;justify-content:center;min-height:200px;" id="chartArea">
+        <p class="text-muted">Apply filters to see chart</p>
+      </div>
+    </div>
+
+    <!-- Data Table with Manual Override -->
+    <div class="glass-card">
+      <div class="section-header"><h2>Attendance Records</h2><span class="text-muted text-sm" id="recordCount">0 records</span></div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>Student UID</th><th>Subject</th><th>Section</th><th>Date</th><th>Duration</th><th>Present</th><th>%</th><th>Status</th><th>By</th><th>Override</th></tr></thead>
+          <tbody id="reportBody"><tr><td colspan="10" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">Apply filters to load report</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Manual Attendance Entry -->
+    <div class="glass-card" style="margin-top:var(--space-xl);">
+      <div class="section-header"><h2><i class="fas fa-pen-to-square" style="font-size:1.1rem;"></i> Manual Attendance Entry</h2></div>
+      <p class="text-muted text-sm" style="margin-bottom:var(--space-lg);">Mark attendance manually for students who were missed by the camera system.</p>
+      <form onsubmit="submitManualAttendance(event)" style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr 1fr auto;gap:var(--space-md);align-items:end;">
+        <div class="form-group"><label class="form-label">Student UID *</label><input class="form-input" id="mUid" required placeholder="STU001"></div>
+        <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="mSubject" placeholder="Mathematics"></div>
+        <div class="form-group"><label class="form-label">Section</label><input class="form-input" id="mSection" placeholder="CSE-A"></div>
+        <div class="form-group"><label class="form-label">Date</label><input type="date" class="form-input" id="mDate"></div>
+        <div class="form-group"><label class="form-label">Status</label>
+          <select class="form-input form-select" id="mStatus">
+            <option value="present">✅ Present</option>
+            <option value="absent">❌ Absent</option>
+          </select>
+        </div>
+        <button type="submit" class="btn btn-primary" style="height:46px;">💾 Save</button>
+      </form>
+    </div>
+
+    <!-- Low Attendance Alerts -->
+    <div class="glass-card" style="margin-top:var(--space-xl);" id="alertsPanel">
+      <div class="section-header"><h2 style="color:var(--accent-rose);">⚠️ Low Attendance Alerts</h2></div>
+      <div id="alertsList"><p class="text-muted text-sm">Students below 75% attendance will appear here after filtering</p></div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=teacher';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+
+    // Default date to today
+    document.getElementById('mDate').valueAsDate = new Date();
+
+    async function loadReport(){
+      const section=document.getElementById('fSection').value.trim();
+      const subject=document.getElementById('fSubject').value.trim();
+      const from=document.getElementById('fFrom').value;
+      const to=document.getElementById('fTo').value;
+
+      let url=`${API}/attendance/report?`;
+      if(section)url+=`section=${encodeURIComponent(section)}&`;
+      if(subject)url+=`subject=${encodeURIComponent(subject)}&`;
+      if(from)url+=`from=${from}&`;
+      if(to)url+=`to=${to}&`;
+
+      try{
+        const r=await fetch(url,{headers});const d=await r.json();
+        if(!d.success){showToast(d.message,'error');return;}
+
+        const{records,summary}=d;
+        document.getElementById('sumTotal').textContent=summary.total_records;
+        document.getElementById('sumPresent').textContent=summary.present;
+        document.getElementById('sumAbsent').textContent=summary.absent;
+        document.getElementById('sumAvg').textContent=summary.avg_percentage+'%';
+        document.getElementById('recordCount').textContent=`${records.length} records`;
+
+        // Chart (simple bar)
+        if(records.length>0){
+          const pct=summary.total_records>0?Math.round(summary.present/summary.total_records*100):0;
+          const aPct=100-pct;
+          document.getElementById('chartArea').innerHTML=`
+            <div style="text-align:center;">
+              <div style="display:flex;gap:4px;height:160px;align-items:end;justify-content:center;">
+                <div style="width:80px;height:${pct*1.5}px;background:var(--gradient-emerald);border-radius:var(--radius-md) var(--radius-md) 0 0;display:flex;align-items:end;justify-content:center;padding-bottom:8px;">
+                  <span style="color:#fff;font-weight:700;font-size:0.9rem;">${pct}%</span>
+                </div>
+                <div style="width:80px;height:${aPct*1.5}px;background:var(--gradient-rose);border-radius:var(--radius-md) var(--radius-md) 0 0;display:flex;align-items:end;justify-content:center;padding-bottom:8px;">
+                  <span style="color:#fff;font-weight:700;font-size:0.9rem;">${aPct}%</span>
+                </div>
+              </div>
+              <div style="display:flex;gap:4px;justify-content:center;margin-top:8px;">
+                <span style="width:80px;text-align:center;font-size:0.8rem;color:var(--text-muted);">Present</span>
+                <span style="width:80px;text-align:center;font-size:0.8rem;color:var(--text-muted);">Absent</span>
+              </div>
+            </div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+              <div><span class="font-bold" style="font-size:2rem;">${summary.unique_students}</span><br><span class="text-muted text-sm">Unique Students</span></div>
+              <div><span class="font-bold" style="font-size:2rem;">${summary.total_records}</span><br><span class="text-muted text-sm">Total Records</span></div>
+            </div>`;
+        }
+
+        // Table with override buttons
+        if(records.length>0){
+          document.getElementById('reportBody').innerHTML=records.map(r=>`<tr>
+            <td class="font-semibold">${r.student_uid}</td><td>${r.subject||'—'}</td>
+            <td><span class="badge badge-blue">${r.section||'—'}</span></td><td>${r.date}</td>
+            <td>${r.class_duration_min||0}m</td><td>${r.present_duration_min||0}m</td>
+            <td>${Math.round(r.presence_percentage||0)}%</td>
+            <td><span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status}</span></td>
+            <td class="text-muted">${r.marked_by||'—'}</td>
+            <td style="white-space:nowrap;">
+              <button class="btn btn-ghost btn-sm" onclick="overrideAttendance('${r.student_uid}','${r.session_id}','present')" title="Mark Present" style="color:var(--accent-emerald);${r.status==='present'?'opacity:0.3;pointer-events:none;':''}">✅</button>
+              <button class="btn btn-ghost btn-sm" onclick="overrideAttendance('${r.student_uid}','${r.session_id}','absent')" title="Mark Absent" style="color:var(--accent-rose);${r.status==='absent'?'opacity:0.3;pointer-events:none;':''}">❌</button>
+            </td>
+          </tr>`).join('');
+        }else{
+          document.getElementById('reportBody').innerHTML='<tr><td colspan="10" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">No records found</td></tr>';
+        }
+
+        // Low attendance alerts
+        const studentMap={};
+        records.forEach(r=>{
+          if(!studentMap[r.student_uid])studentMap[r.student_uid]={name:r.student_uid,present:0,total:0};
+          studentMap[r.student_uid].total++;
+          if(r.status==='present')studentMap[r.student_uid].present++;
+        });
+        const lowStudents=Object.entries(studentMap).filter(([_,s])=>s.total>0&&(s.present/s.total*100)<75);
+        if(lowStudents.length>0){
+          document.getElementById('alertsList').innerHTML=lowStudents.map(([uid,s])=>{
+            const pct=Math.round(s.present/s.total*100);
+            return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius-md);border:1px solid rgba(244,63,94,0.2);background:rgba(244,63,94,0.05);margin-bottom:8px;">
+              <div><span class="font-semibold">${uid}</span> <span class="text-muted text-sm">— ${s.present}/${s.total} classes</span></div>
+              <div style="display:flex;align-items:center;gap:8px;">
+                <span class="badge badge-red">${pct}% attendance</span>
+                <button class="btn btn-ghost btn-sm" onclick="document.getElementById('mUid').value='${uid}';document.getElementById('mStatus').value='present';window.scrollTo({top:document.querySelector('#mUid').offsetTop-100,behavior:'smooth'});" title="Quick mark present"><i class="fas fa-pen-to-square" style="font-size:1.1rem;"></i></button>
+              </div>
+            </div>`;
+          }).join('');
+        }else{
+          document.getElementById('alertsList').innerHTML='<p class="text-muted text-sm">No students below 75% threshold 🎉</p>';
+        }
+
+      }catch(e){showToast('Server error','error');console.error(e);}
+    }
+
+    // Override existing attendance record
+    async function overrideAttendance(studentUid, sessionId, newStatus) {
+      if (!confirm(`Mark ${studentUid} as ${newStatus.toUpperCase()} for this session?`)) return;
+      try {
+        const res = await fetch(`${API}/attendance/override`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ student_uid: studentUid, session_id: sessionId, status: newStatus })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${studentUid} marked as ${newStatus}`, 'success');
+          loadReport(); // Refresh
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch(e) { showToast('Override failed', 'error'); }
+    }
+
+    // Submit manual attendance (new record)
+    async function submitManualAttendance(e) {
+      e.preventDefault();
+      const uid = document.getElementById('mUid').value.trim();
+      const subject = document.getElementById('mSubject').value.trim();
+      const section = document.getElementById('mSection').value.trim();
+      const date = document.getElementById('mDate').value;
+      const status = document.getElementById('mStatus').value;
+
+      if (!uid) { showToast('Student UID is required', 'error'); return; }
+
+      try {
+        const res = await fetch(`${API}/attendance/manual`, {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            student_uid: uid, subject, section, date,
+            status, class_duration_min: 50,
+            present_duration_min: status === 'present' ? 50 : 0
+          })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Attendance recorded: ${uid} → ${status}`, 'success');
+          document.getElementById('mUid').value = '';
+          loadReport();
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch(e) { showToast('Server error', 'error'); }
+    }
+
+    function exportCSV(){
+      const section=document.getElementById('fSection').value.trim();
+      const subject=document.getElementById('fSubject').value.trim();
+      const from=document.getElementById('fFrom').value;
+      const to=document.getElementById('fTo').value;
+      let url=`${API}/attendance/report/csv?`;
+      if(section)url+=`section=${encodeURIComponent(section)}&`;
+      if(subject)url+=`subject=${encodeURIComponent(subject)}&`;
+      if(from)url+=`from=${from}&`;
+      if(to)url+=`to=${to}&`;
+      fetch(url,{headers}).then(r=>r.blob()).then(b=>{
+        const a=document.createElement('a');
+        a.href=URL.createObjectURL(b);
+        a.download='attendance_report.csv';
+        a.click();
+        showToast('CSV downloaded!','success');
+      }).catch(()=>showToast('Export failed','error'));
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=teacher';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':'❌'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

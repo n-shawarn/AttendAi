@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Students — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item active" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>👥 Student Management</h1>
+      <div class="top-bar-actions">
+        <div class="search-bar">
+          <span class="search-icon">🔍</span>
+          <input type="text" placeholder="Search students..." id="searchInput" oninput="filterStudents()">
+        </div>
+        <button class="btn btn-primary" onclick="showRegisterModal()">+ Add Student</button>
+      </div>
+    </div>
+
+    <!-- Student List -->
+    <div class="glass-card">
+      <table class="data-table" id="studentTable">
+        <thead>
+          <tr><th>UID</th><th>Name</th><th>Section</th><th>Email</th><th>Face</th><th>Actions</th></tr>
+        </thead>
+        <tbody id="studentBody">
+          <tr><td colspan="6" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">Loading students...</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Register Modal -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Register New Student</h3>
+        <button class="modal-close" onclick="closeModal('registerModal')">×</button>
+      </div>
+      <form onsubmit="registerStudent(event)" style="display:flex;flex-direction:column;gap:var(--space-md);">
+        <div class="form-group"><label class="form-label">UID *</label><input type="text" class="form-input" id="regUid" required placeholder="e.g. STU001"></div>
+        <div class="form-group"><label class="form-label">Full Name *</label><input type="text" class="form-input" id="regName" required placeholder="John Doe"></div>
+        <div class="form-group"><label class="form-label">Password *</label><input type="password" class="form-input" id="regPassword" required placeholder="Min 6 characters"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">Section</label><input type="text" class="form-input" id="regSection" placeholder="CSE-A"></div>
+          <div class="form-group"><label class="form-label">Semester</label><input type="text" class="form-input" id="regSemester" placeholder="4th"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="regEmail" placeholder="student@email.com"></div>
+        <div class="form-group"><label class="form-label">Department</label><input type="text" class="form-input" id="regDept" placeholder="Computer Science"></div>
+        <button type="submit" class="btn btn-primary btn-lg w-full" id="regBtn">Register Student</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Face Register Modal -->
+  <div class="modal-overlay" id="faceModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Register Face — <span id="faceStudentName"></span></h3>
+        <button class="modal-close" onclick="closeFaceModal()">×</button>
+      </div>
+      <div class="face-capture-area">
+        <div class="face-frame" id="regFaceFrame">
+          <span class="placeholder-icon">👤</span>
+          <video id="regVideo" autoplay playsinline style="display:none;"></video>
+          <canvas id="regCanvas" style="display:none;"></canvas>
+        </div>
+        <p class="face-status" id="regFaceStatus">Click to start camera</p>
+        <div style="display:flex;gap:var(--space-md);">
+          <button class="btn btn-primary" id="startRegCam" onclick="startRegCamera()">📸 Start Camera</button>
+          <button class="btn btn-success hidden" id="captureRegBtn" onclick="captureRegFace()">✅ Capture (<span id="captureCount">0</span>/3)</button>
+        </div>
+        <button class="btn btn-primary hidden w-full" id="saveRegFaces" onclick="saveFaces()" style="margin-top:var(--space-md);">💾 Save Face Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token) window.location.href = '../login.html?role=teacher';
+    const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+
+    let allStudents = [];
+    let regStream = null;
+    let faceImages = [];
+    let faceTargetUid = '';
+
+    async function loadStudents() {
+      try {
+        const res = await fetch(`${API}/students`, {headers});
+        const data = await res.json();
+        if (data.success) {
+          allStudents = data.students;
+          renderStudents(allStudents);
+        }
+      } catch(e) { document.getElementById('studentBody').innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--accent-rose);">Failed to load. Is the server running?</td></tr>'; }
+    }
+
+    function renderStudents(students) {
+      if (students.length === 0) {
+        document.getElementById('studentBody').innerHTML = '<tr><td colspan="6" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">No students registered yet</td></tr>';
+        return;
+      }
+      document.getElementById('studentBody').innerHTML = students.map(s => `
+        <tr>
+          <td><span class="font-semibold">${s.uid}</span></td>
+          <td>${s.name}</td>
+          <td><span class="badge badge-blue">${s.section || '—'}</span></td>
+          <td class="text-muted">${s.email || '—'}</td>
+          <td>${s.face_registered ? '<span class="badge badge-green">✅ Yes</span>' : '<span class="badge badge-amber">❌ No</span>'}</td>
+          <td>
+            <button class="btn btn-ghost btn-sm" onclick="showFaceModal('${s.uid}','${s.name}')">📸 Face</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterStudents() {
+      const q = document.getElementById('searchInput').value.toLowerCase();
+      renderStudents(allStudents.filter(s => s.name.toLowerCase().includes(q) || s.uid.toLowerCase().includes(q) || (s.section||'').toLowerCase().includes(q)));
+    }
+
+    function showRegisterModal() { document.getElementById('registerModal').classList.add('active'); }
+    function closeModal(id) { document.getElementById(id).classList.remove('active'); }
+
+    async function registerStudent(e) {
+      e.preventDefault();
+      const btn = document.getElementById('regBtn');
+      btn.disabled = true; btn.textContent = 'Registering...';
+      try {
+        const res = await fetch(`${API}/auth/register`, {
+          method: 'POST', headers,
+          body: JSON.stringify({
+            role: 'student', uid: document.getElementById('regUid').value.trim(),
+            name: document.getElementById('regName').value.trim(),
+            password: document.getElementById('regPassword').value,
+            section: document.getElementById('regSection').value.trim(),
+            semester: document.getElementById('regSemester').value.trim(),
+            email: document.getElementById('regEmail').value.trim(),
+            department: document.getElementById('regDept').value.trim()
+          })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Student registered!', 'success'); closeModal('registerModal'); loadStudents(); }
+        else showToast(data.message, 'error');
+      } catch(e) { showToast('Server error', 'error'); }
+      btn.disabled = false; btn.textContent = 'Register Student';
+    }
+
+    function showFaceModal(uid, name) {
+      faceTargetUid = uid;
+      faceImages = [];
+      document.getElementById('faceStudentName').textContent = name;
+      document.getElementById('captureCount').textContent = '0';
+      document.getElementById('faceModal').classList.add('active');
+    }
+
+    function closeFaceModal() {
+      stopRegCamera();
+      document.getElementById('faceModal').classList.remove('active');
+    }
+
+    async function startRegCamera() {
+      try {
+        regStream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});
+        const video = document.getElementById('regVideo');
+        video.srcObject = regStream;
+        video.style.display = 'block';
+        document.getElementById('regFaceFrame').classList.add('capturing');
+        document.querySelector('#regFaceFrame .placeholder-icon').style.display = 'none';
+        document.getElementById('startRegCam').classList.add('hidden');
+        document.getElementById('captureRegBtn').classList.remove('hidden');
+        document.getElementById('regFaceStatus').textContent = 'Position face and click Capture';
+        document.getElementById('regFaceStatus').className = 'face-status detecting';
+      } catch(e) { showToast('Camera access denied', 'error'); }
+    }
+
+    function captureRegFace() {
+      const video = document.getElementById('regVideo');
+      const canvas = document.getElementById('regCanvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      faceImages.push(canvas.toDataURL('image/jpeg', 0.9));
+      document.getElementById('captureCount').textContent = faceImages.length;
+      document.getElementById('regFaceStatus').textContent = `Captured ${faceImages.length}/3 — ${faceImages.length < 3 ? 'turn head slightly and capture again' : 'Ready to save!'}`;
+      if (faceImages.length >= 3) {
+        document.getElementById('captureRegBtn').classList.add('hidden');
+        document.getElementById('saveRegFaces').classList.remove('hidden');
+      }
+    }
+
+    async function saveFaces() {
+      const btn = document.getElementById('saveRegFaces');
+      btn.disabled = true; btn.textContent = '⏳ Saving...';
+      try {
+        const res = await fetch(`${API}/auth/face-register`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ uid: faceTargetUid, role: 'student', images: faceImages })
+        });
+        const data = await res.json();
+        if (data.success) { showToast('Face registered!', 'success'); closeFaceModal(); loadStudents(); }
+        else showToast(data.message, 'error');
+      } catch(e) { showToast('Server error', 'error'); }
+      btn.disabled = false; btn.textContent = '💾 Save Face Data';
+    }
+
+    function stopRegCamera() {
+      if (regStream) { regStream.getTracks().forEach(t=>t.stop()); regStream=null; }
+      const v = document.getElementById('regVideo');
+      if(v){v.style.display='none';v.srcObject=null;}
+      document.getElementById('regFaceFrame').classList.remove('capturing');
+      document.querySelector('#regFaceFrame .placeholder-icon').style.display='';
+      document.getElementById('startRegCam').classList.remove('hidden');
+      document.getElementById('captureRegBtn').classList.add('hidden');
+      document.getElementById('saveRegFaces').classList.add('hidden');
+      document.getElementById('regFaceStatus').textContent='Click to start camera';
+      document.getElementById('regFaceStatus').className='face-status';
+    }
+
+    function logout() { localStorage.clear(); window.location.href='../login.html?role=teacher'; }
+    function showToast(msg,type='info'){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},4000);}
+
+    loadStudents();
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

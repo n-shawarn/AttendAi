@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Assignments — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .a-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); transition: var(--transition-base); margin-bottom: var(--space-lg); }
+    .a-card:hover { border-color: var(--border-light); box-shadow: var(--shadow-md); }
+    .a-title { font-weight: 700; font-size: 1.1rem; margin-bottom: 4px; }
+    .a-meta { display: flex; gap: var(--space-lg); flex-wrap: wrap; font-size: 0.8rem; color: var(--text-muted); margin: var(--space-sm) 0 var(--space-md); }
+    .a-meta span { display: flex; align-items: center; gap: 4px; }
+    .a-actions { display: flex; gap: var(--space-sm); flex-wrap: wrap; margin-top: var(--space-md); }
+    .a-desc { font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6; margin-bottom: var(--space-md); }
+    .file-item { display: flex; align-items: center; gap: var(--space-sm); padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.85rem; text-decoration: none; color: inherit; transition: var(--transition-fast); }
+    .file-item:hover { border-color: var(--accent-blue); background: rgba(59,130,246,0.06); }
+    .submit-area { margin-top: var(--space-md); padding: var(--space-md); border: 2px dashed var(--border-light); border-radius: var(--radius-lg); text-align: center; cursor: pointer; transition: var(--transition-base); }
+    .submit-area:hover { border-color: var(--accent-blue); background: rgba(59,130,246,0.05); }
+    .submitted-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: var(--radius-full); font-size: 0.8rem; font-weight: 600; }
+    .submitted-yes { background: rgba(16,185,129,0.15); color: var(--accent-emerald); }
+    .submitted-no { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+    /* AI Feedback */
+    .ai-feedback { background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08)); border: 1px solid rgba(139,92,246,0.2); border-radius: var(--radius-lg); padding: var(--space-lg); margin-top: var(--space-md); animation: fadeIn 0.5s; }
+    .ai-feedback h4 { color: var(--accent-purple); margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
+    .ai-scores { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md); }
+    .ai-score { text-align: center; padding: var(--space-md); background: rgba(0,0,0,0.15); border-radius: var(--radius-md); }
+    .ai-score .val { font-size: 1.5rem; font-weight: 800; font-family: var(--font-heading); }
+    .ai-score .lbl { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; }
+    .score-high { color: var(--accent-emerald); }
+    .score-mid { color: var(--accent-amber); }
+    .score-low { color: var(--accent-rose); }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Attendance</a>
+      <a class="nav-item active" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="profile.html"><span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profile</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar"><h1>📚 My Assignments</h1></div>
+    <div id="assignmentsList">
+      <div class="glass-card"><div class="empty-state"><div class="empty-icon"><i class="fas fa-book-open" style="font-size:2rem;color:var(--text-muted);opacity:0.4;"></i></div><h3>No assignments</h3><p>Your assignments will appear here</p></div></div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    const user=JSON.parse(localStorage.getItem('user')||'{}');
+    if(!token)window.location.href='../login.html?role=student';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+
+    function getFileIcon(name) {
+      const ext = (name||'').split('.').pop().toLowerCase();
+      const icons = {pdf:'📄',doc:'📝',docx:'📝',ppt:'📊',pptx:'📊',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',zip:'📦'};
+      return icons[ext] || '📎';
+    }
+    function formatSize(b) { return b<1024?b+' B':b<1048576?(b/1024).toFixed(1)+' KB':(b/1048576).toFixed(1)+' MB'; }
+
+    async function loadAssignments() {
+      try {
+        const r = await fetch(`${API}/assignments`, {headers});
+        const d = await r.json();
+        if (d.success && d.assignments.length > 0) {
+          let html = '';
+          for (const a of d.assignments) {
+            // Load submission status + AI feedback
+            let subHtml = '';
+            let statusBadge = '<span class="submitted-badge submitted-no">⏳ Not submitted</span>';
+            try {
+              const sr = await fetch(`${API}/assignments/${a.assignment_id||a.id}/my-submission`, {headers});
+              const sd = await sr.json();
+              if (sd.success && sd.submission) {
+                statusBadge = `<span class="submitted-badge submitted-yes">✅ Submitted — ${sd.submission.file_name}</span>`;
+                // Show AI feedback if analyzed
+                if (sd.submission.ai_analyzed) {
+                  try {
+                    const ai = JSON.parse(sd.submission.ai_remarks || '{}');
+                    const relC = (ai.relevance_score||0) >= 80 ? 'score-high' : (ai.relevance_score||0) >= 50 ? 'score-mid' : 'score-low';
+                    const qualC = (ai.quality_rating||0) >= 7 ? 'score-high' : (ai.quality_rating||0) >= 4 ? 'score-mid' : 'score-low';
+                    subHtml = `<div class="ai-feedback">
+                      <h4>🤖 AI Feedback on Your Submission</h4>
+                      <div class="ai-scores">
+                        <div class="ai-score"><div class="val ${relC}">${ai.relevance_score||0}%</div><div class="lbl">Relevance</div></div>
+                        <div class="ai-score"><div class="val ${qualC}">${ai.quality_rating||0}/10</div><div class="lbl">Quality</div></div>
+                        <div class="ai-score"><div class="val" style="color:var(--accent-blue);">${ai.grade_suggestion||'—'}</div><div class="lbl">Grade</div></div>
+                      </div>
+                      <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:var(--space-sm);"><strong>Summary:</strong> ${ai.summary||''}</p>
+                      ${ai.strengths&&ai.strengths.length?`<p style="font-size:0.85rem;margin-bottom:var(--space-sm);"><strong style="color:var(--accent-emerald);">✅ Strengths:</strong> ${ai.strengths.join(', ')}</p>`:''}
+                      ${ai.weaknesses&&ai.weaknesses.length?`<p style="font-size:0.85rem;margin-bottom:var(--space-sm);"><strong style="color:var(--accent-amber);">⚠️ Improve:</strong> ${ai.weaknesses.join(', ')}</p>`:''}
+                      <p style="font-size:0.85rem;color:var(--text-secondary);"><strong>📝 Remarks:</strong> ${ai.remarks||''}</p>
+                    </div>`;
+                  } catch(e) {}
+                }
+                if (sd.submission.grade) {
+                  statusBadge += ` <span class="badge badge-green" style="margin-left:8px;">Grade: ${sd.submission.grade}</span>`;
+                }
+                if (sd.submission.feedback) {
+                  subHtml += `<div style="margin-top:var(--space-md);padding:var(--space-md);background:rgba(16,185,129,0.06);border:1px solid rgba(16,185,129,0.15);border-radius:var(--radius-md);"><strong style="font-size:0.85rem;">💬 Teacher Feedback:</strong><p style="font-size:0.85rem;color:var(--text-secondary);margin-top:4px;">${sd.submission.feedback}</p></div>`;
+                }
+              }
+            } catch(e) {}
+
+            const aid = a.assignment_id || a.id;
+            html += `<div class="a-card">
+              <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                <div><div class="a-title">${a.title}</div>
+                <div class="a-meta">
+                  <span>📖 ${a.subject||'General'}</span><span>🏫 ${a.section||'All'}</span>
+                  <span>📅 Due: ${a.due_date||'No date'}</span>
+                  ${a.max_score?`<span>💯 Max: ${a.max_score}</span>`:''}
+                </div></div>
+                <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;">
+                  ${statusBadge}
+                  ${a.attachment_count>0?`<span style="font-size:0.75rem;color:var(--accent-purple);">📎 ${a.attachment_count} attachment(s)</span>`:''}
+                </div>
+              </div>
+              ${a.description?`<p class="a-desc">${a.description}</p>`:''}
+              <div class="a-actions">
+                ${a.attachment_count>0?`<button class="btn btn-ghost btn-sm" onclick="viewAttachments('${aid}')">📎 Download Files</button>`:''}
+                <button class="btn btn-primary btn-sm" onclick="submitWork('${aid}')">📤 Submit Work</button>
+              </div>
+              ${subHtml}
+            </div>`;
+          }
+          document.getElementById('assignmentsList').innerHTML = html;
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function viewAttachments(aid) {
+      try {
+        const r = await fetch(`${API}/assignments/${aid}/attachments`, {headers});
+        const d = await r.json();
+        if (d.success && d.attachments.length > 0) {
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay active';
+          modal.innerHTML = `<div class="modal-content" style="max-width:480px;">
+            <div class="modal-header"><h3>📎 Assignment Files</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button></div>
+            <div style="display:flex;flex-direction:column;gap:var(--space-sm);">
+              ${d.attachments.map(a => `<a href="http://localhost:5000/api/assignments/${aid}/download/${encodeURIComponent(a.file_name)}" target="_blank" class="file-item"><span>${getFileIcon(a.file_name)}</span><span style="flex:1;">${a.file_name}</span><span style="color:var(--text-muted);font-size:0.75rem;">${formatSize(a.file_size||0)}</span><span style="color:var(--accent-blue);">⬇</span></a>`).join('')}
+            </div></div>`;
+          modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+          document.body.appendChild(modal);
+        } else showToast('No files available', 'info');
+      } catch(e) { showToast('Error', 'error'); }
+    }
+
+    function submitWork(aid) {
+      const modal = document.createElement('div');
+      modal.className = 'modal-overlay active';
+      modal.innerHTML = `<div class="modal-content" style="max-width:480px;">
+        <div class="modal-header"><h3>📤 Submit Your Work</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button></div>
+        <form id="submitForm-${aid}" style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="submit-area" onclick="document.getElementById('subFile-${aid}').click()">
+            <div style="font-size:2rem;margin-bottom:4px;">📁</div>
+            <div style="font-weight:600;" id="subFileName-${aid}">Click to select your file</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);">PDF, Word, Images, etc.</div>
+          </div>
+          <input type="file" id="subFile-${aid}" hidden accept=".pdf,.doc,.docx,.ppt,.pptx,.jpg,.jpeg,.png,.gif,.txt,.zip" onchange="document.getElementById('subFileName-${aid}').textContent=this.files[0]?.name||'Click to select'">
+          <button type="button" class="btn btn-primary btn-lg w-full" onclick="doSubmit('${aid}',this)">🚀 Submit Assignment</button>
+        </form></div>`;
+      modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+      document.body.appendChild(modal);
+    }
+
+    async function doSubmit(aid, btn) {
+      const fileInput = document.getElementById(`subFile-${aid}`);
+      if (!fileInput.files.length) { showToast('Please select a file', 'error'); return; }
+      btn.disabled = true; btn.textContent = '⏳ Uploading...';
+      const fd = new FormData();
+      fd.append('file', fileInput.files[0]);
+      try {
+        const r = await fetch(`${API}/assignments/${aid}/submit`, {
+          method: 'POST', headers: {'Authorization': `Bearer ${token}`}, body: fd
+        });
+        const d = await r.json();
+        if (d.success) { showToast('Submitted successfully!', 'success'); btn.closest('.modal-overlay').remove(); loadAssignments(); }
+        else showToast(d.message, 'error');
+      } catch(e) { showToast('Upload failed', 'error'); }
+      btn.disabled = false; btn.textContent = '🚀 Submit Assignment';
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=student';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':t==='error'?'❌':'ℹ️'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+    loadAssignments();
+  </script>
+</body>
+</html>

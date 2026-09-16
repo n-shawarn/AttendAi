@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environment
+venv/
+env/
+.env
+
+# Databases (contain user data)
+backend/databases/*.db
+
+# Uploads (user-generated content)
+backend/uploads/assignments/*
+backend/uploads/submissions/*
+backend/uploads/profiles/*
+!backend/uploads/assignments/.gitkeep
+!backend/uploads/submissions/.gitkeep
+!backend/uploads/profiles/.gitkeep
+
+# Face models (large ONNX files)
+backend/models/face_models/*.onnx
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log

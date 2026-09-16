@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Login to AttendAI Smart Attendance System">
+  <title>Login — AttendAI</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/auth.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="js/theme.js"></script>
+  <style>
+    .role-tab i { margin-right: 6px; font-size: 0.85rem; }
+    .method-icon i { font-size: 1.1rem; }
+    .face-frame .placeholder-icon i { font-size: 3rem; color: var(--text-muted); opacity: 0.5; }
+    .feature-icon i { font-size: 1.1rem; }
+    @keyframes scanPulse { 0%,100% { box-shadow: 0 0 0 0 rgba(59,130,246,0.3); } 50% { box-shadow: 0 0 0 12px rgba(59,130,246,0); } }
+    .face-frame.capturing { animation: scanPulse 2s infinite; }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-bg">
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <div class="auth-brand">
+      <div class="auth-brand-content">
+        <div class="brand-logo" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:64px;height:64px;border-radius:18px;display:flex;align-items:center;justify-content:center;margin-bottom:16px;">
+          <i class="fas fa-brain" style="color:#fff;font-size:2rem;"></i>
+        </div>
+        <h1>AttendAI</h1>
+        <p>AI-powered smart attendance system with real-time face recognition for educational institutions.</p>
+
+        <div class="auth-features">
+          <div class="auth-feature">
+            <div class="feature-icon" style="background: rgba(59,130,246,0.12); color: var(--accent-blue);"><i class="fas fa-face-smile-beam"></i></div>
+            <div class="feature-text">
+              <strong>Biometric Login</strong>
+              Instant face recognition authentication
+            </div>
+          </div>
+          <div class="auth-feature">
+            <div class="feature-icon" style="background: rgba(16,185,129,0.12); color: var(--accent-emerald);"><i class="fas fa-shield-halved"></i></div>
+            <div class="feature-text">
+              <strong>Enterprise Security</strong>
+              Role-based access with encrypted data
+            </div>
+          </div>
+          <div class="auth-feature">
+            <div class="feature-icon" style="background: rgba(139,92,246,0.12); color: var(--accent-purple);"><i class="fas fa-bolt"></i></div>
+            <div class="feature-text">
+              <strong>Instant Access</strong>
+              Choose credentials or biometric — seamless
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="auth-form-panel">
+      <div class="auth-form-header">
+        <a href="index.html" style="display:inline-flex;align-items:center;gap:6px;color:var(--text-muted);font-size:0.85rem;margin-bottom:20px;"><i class="fas fa-arrow-left" style="font-size:0.75rem;"></i> Back to Home</a>
+        <h2>Welcome Back</h2>
+        <p>Sign in to your portal</p>
+      </div>
+
+      <div class="role-tabs" id="roleTabs">
+        <button class="role-tab active" data-role="student" id="tab-student"><i class="fas fa-user-graduate"></i> Student</button>
+        <button class="role-tab" data-role="teacher" id="tab-teacher"><i class="fas fa-chalkboard-teacher"></i> Teacher</button>
+        <button class="role-tab" data-role="admin" id="tab-admin"><i class="fas fa-shield-halved"></i> Admin</button>
+      </div>
+
+      <div class="login-method-toggle">
+        <button class="method-btn active" id="method-uid" onclick="switchMethod('uid')">
+          <span class="method-icon"><i class="fas fa-key"></i></span>
+          <span class="method-label">Credentials</span>
+        </button>
+        <button class="method-btn" id="method-face" onclick="switchMethod('face')">
+          <span class="method-icon"><i class="fas fa-camera"></i></span>
+          <span class="method-label">Face ID</span>
+        </button>
+      </div>
+
+      <form class="auth-form" id="uidForm" onsubmit="handleUIDLogin(event)">
+        <div class="form-group">
+          <label class="form-label">Unique ID</label>
+          <input type="text" class="form-input" id="loginUid" placeholder="Enter your UID" required autocomplete="username">
+        </div>
+        <div class="form-group" style="position:relative;">
+          <label class="form-label">Password</label>
+          <input type="password" class="form-input" id="loginPassword" placeholder="Enter your password" required autocomplete="current-password">
+          <button type="button" class="password-toggle" onclick="togglePassword()" id="pwToggle" style="top:65%;right:14px;"><i class="fas fa-eye"></i></button>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-full" id="loginBtn" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+          <i class="fas fa-sign-in-alt"></i> Sign In
+        </button>
+      </form>
+
+      <div class="auth-form hidden" id="faceForm">
+        <div class="face-capture-area">
+          <div class="face-frame" id="faceFrame">
+            <span class="placeholder-icon"><i class="fas fa-user-circle"></i></span>
+            <video id="loginVideo" autoplay playsinline style="display:none;"></video>
+            <canvas id="loginCanvas" style="display:none;"></canvas>
+            <div class="scan-overlay" id="scanOverlay" style="display:none;">
+              <div class="scan-line"></div>
+            </div>
+          </div>
+          <p class="face-status" id="faceStatus">Activate camera to begin</p>
+          <button type="button" class="btn btn-primary" id="startCameraBtn" onclick="startFaceLogin()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i class="fas fa-camera"></i> Launch Camera
+          </button>
+          <button type="button" class="btn btn-success hidden" id="captureFaceBtn" onclick="captureFace()" style="display:flex;align-items:center;justify-content:center;gap:8px;">
+            <i class="fas fa-check-circle"></i> Verify & Sign In
+          </button>
+        </div>
+      </div>
+
+      <div class="auth-footer">
+        <p>Don't have access? Contact your <strong>Administrator</strong> for registration.</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API_BASE = 'http://localhost:5000/api';
+    let currentRole = 'student';
+    let currentMethod = 'uid';
+    let videoStream = null;
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const role = params.get('role');
+      if (role && ['student', 'teacher', 'admin'].includes(role)) switchRole(role);
+      document.querySelectorAll('.role-tab').forEach(tab => {
+        tab.addEventListener('click', () => switchRole(tab.dataset.role));
+      });
+    });
+
+    function switchRole(role) {
+      currentRole = role;
+      document.querySelectorAll('.role-tab').forEach(t => t.classList.remove('active'));
+      document.querySelector(`[data-role="${role}"]`).classList.add('active');
+      const roleNames = { student: 'Student', teacher: 'Faculty', admin: 'Administrator' };
+      document.querySelector('.auth-form-header h2').textContent = `${roleNames[role]} Login`;
+    }
+
+    function switchMethod(method) {
+      currentMethod = method;
+      document.querySelectorAll('.method-btn').forEach(b => b.classList.remove('active'));
+      document.getElementById(`method-${method}`).classList.add('active');
+      if (method === 'uid') {
+        document.getElementById('uidForm').classList.remove('hidden');
+        document.getElementById('faceForm').classList.add('hidden');
+        stopCamera();
+      } else {
+        document.getElementById('uidForm').classList.add('hidden');
+        document.getElementById('faceForm').classList.remove('hidden');
+      }
+    }
+
+    async function handleUIDLogin(e) {
+      e.preventDefault();
+      const uid = document.getElementById('loginUid').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('loginBtn');
+      if (!uid || !password) { showToast('Please fill all fields', 'error'); return; }
+      btn.innerHTML = '<span class="loader" style="width:20px;height:20px;border-width:2px;"></span> Authenticating...';
+      btn.disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/auth/login`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ uid, password, role: currentRole })
+        });
+        const data = await res.json();
+        if (data.success) {
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('role', currentRole);
+          showToast('Authentication successful!', 'success');
+          setTimeout(() => { window.location.href = `${currentRole}/dashboard.html`; }, 800);
+        } else { showToast(data.message || 'Invalid credentials', 'error'); }
+      } catch (err) { showToast('Server unreachable. Please start the backend.', 'error'); }
+      btn.innerHTML = '<i class="fas fa-sign-in-alt"></i> Sign In';
+      btn.disabled = false;
+    }
+
+    async function startFaceLogin() {
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ video: { width: 640, height: 480, facingMode: 'user' } });
+        const video = document.getElementById('loginVideo');
+        video.srcObject = videoStream; video.style.display = 'block';
+        document.getElementById('faceFrame').classList.add('capturing');
+        document.querySelector('.placeholder-icon').style.display = 'none';
+        document.getElementById('scanOverlay').style.display = 'block';
+        document.getElementById('faceStatus').textContent = 'Position your face within the frame';
+        document.getElementById('faceStatus').className = 'face-status detecting';
+        document.getElementById('startCameraBtn').classList.add('hidden');
+        document.getElementById('captureFaceBtn').classList.remove('hidden');
+      } catch (err) { showToast('Camera access denied. Please allow camera.', 'error'); }
+    }
+
+    async function captureFace() {
+      const video = document.getElementById('loginVideo');
+      const canvas = document.getElementById('loginCanvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      const imageData = canvas.toDataURL('image/jpeg', 0.9);
+      document.getElementById('faceStatus').textContent = 'Analyzing biometric data...';
+      document.getElementById('faceStatus').className = 'face-status detecting';
+      document.getElementById('captureFaceBtn').disabled = true;
+      try {
+        const res = await fetch(`${API_BASE}/auth/face-login`, {
+          method: 'POST', headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ image: imageData, role: currentRole })
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('faceFrame').classList.remove('capturing');
+          document.getElementById('faceFrame').classList.add('success');
+          document.getElementById('faceStatus').textContent = `Verified — Welcome, ${data.user.name}!`;
+          document.getElementById('faceStatus').className = 'face-status matched';
+          document.getElementById('scanOverlay').style.display = 'none';
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('user', JSON.stringify(data.user));
+          localStorage.setItem('role', currentRole);
+          showToast('Biometric verified! Redirecting...', 'success');
+          setTimeout(() => { window.location.href = `${currentRole}/dashboard.html`; }, 1200);
+        } else {
+          document.getElementById('faceStatus').textContent = data.message || 'Identity not recognized';
+          document.getElementById('faceStatus').className = 'face-status error';
+          document.getElementById('captureFaceBtn').disabled = false;
+          showToast('Face not recognized. Please retry.', 'error');
+        }
+      } catch (err) { showToast('Server unreachable.', 'error'); document.getElementById('captureFaceBtn').disabled = false; }
+    }
+
+    function stopCamera() {
+      if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+      const video = document.getElementById('loginVideo');
+      if (video) { video.style.display = 'none'; video.srcObject = null; }
+      document.getElementById('faceFrame').classList.remove('capturing', 'success');
+      document.querySelector('.placeholder-icon').style.display = '';
+      document.getElementById('scanOverlay').style.display = 'none';
+      document.getElementById('faceStatus').textContent = 'Activate camera to begin';
+      document.getElementById('faceStatus').className = 'face-status';
+      document.getElementById('startCameraBtn').classList.remove('hidden');
+      document.getElementById('captureFaceBtn').classList.add('hidden');
+    }
+
+    function togglePassword() {
+      const input = document.getElementById('loginPassword');
+      const btn = document.getElementById('pwToggle');
+      if (input.type === 'password') { input.type = 'text'; btn.innerHTML = '<i class="fas fa-eye-slash"></i>'; }
+      else { input.type = 'password'; btn.innerHTML = '<i class="fas fa-eye"></i>'; }
+    }
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      const ico = type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle';
+      toast.innerHTML = `<span><i class="fas ${ico}"></i></span><span style="flex:1;font-size:0.9rem;">${message}</span>`;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transform = 'translateX(100px)'; toast.style.transition = 'all 0.3s ease'; setTimeout(() => toast.remove(), 300); }, 4000);
+    }
+  </script>
+</body>
+</html>

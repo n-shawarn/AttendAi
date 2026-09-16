@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="AI-powered Smart Attendance System with real-time face recognition for schools and colleges">
+  <title>AttendAI — Smart Attendance System</title>
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/components.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <style>
+    /* ===== LANDING PAGE SPECIFIC ===== */
+    .landing-page {
+      min-height: 100vh;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Animated mesh background */
+    .mesh-bg {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+    }
+
+    .mesh-bg .grid-lines {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+      background-size: 60px 60px;
+      animation: gridMove 20s linear infinite;
+    }
+
+    @keyframes gridMove {
+      0% { transform: translate(0,0); }
+      100% { transform: translate(60px,60px); }
+    }
+
+    .mesh-bg .orb {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      opacity: 0.2;
+    }
+
+    .mesh-bg .orb-1 { width: 500px; height: 500px; background: #3b82f6; top: -15%; right: -10%; animation: float 10s ease-in-out infinite; }
+    .mesh-bg .orb-2 { width: 400px; height: 400px; background: #8b5cf6; bottom: -10%; left: -10%; animation: float 12s ease-in-out infinite 2s; }
+    .mesh-bg .orb-3 { width: 300px; height: 300px; background: #06b6d4; top: 40%; left: 40%; animation: float 8s ease-in-out infinite 4s; }
+
+    /* Navbar */
+    .landing-nav {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 20px 48px;
+    }
+
+    .landing-nav .logo {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .landing-nav .logo-icon {
+      width: 44px; height: 44px;
+      background: var(--gradient-blue);
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.4rem;
+      box-shadow: var(--shadow-glow-blue);
+    }
+
+    .landing-nav .logo-text {
+      font-family: var(--font-heading);
+      font-size: 1.4rem;
+      font-weight: 800;
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    /* Hero */
+    .hero {
+      position: relative;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      text-align: center;
+      padding: 80px 24px 60px;
+    }
+
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 6px 18px;
+      background: rgba(59,130,246,0.1);
+      border: 1px solid rgba(59,130,246,0.2);
+      border-radius: var(--radius-full);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--accent-blue);
+      margin-bottom: 32px;
+      animation: fadeInUp 0.6s ease;
+    }
+
+    .hero h1 {
+      font-size: clamp(2.5rem, 6vw, 4.2rem);
+      font-weight: 800;
+      line-height: 1.1;
+      max-width: 800px;
+      margin-bottom: 24px;
+      animation: fadeInUp 0.6s ease 0.1s both;
+    }
+
+    .hero h1 .gradient-text {
+      background: var(--gradient-hero);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero .subtitle {
+      font-size: 1.15rem;
+      color: var(--text-secondary);
+      max-width: 600px;
+      line-height: 1.7;
+      margin-bottom: 48px;
+      animation: fadeInUp 0.6s ease 0.2s both;
+    }
+
+    /* Role selection cards */
+    .role-cards {
+      display: flex;
+      gap: 24px;
+      justify-content: center;
+      flex-wrap: wrap;
+      animation: fadeInUp 0.6s ease 0.3s both;
+    }
+
+    .role-card {
+      width: 280px;
+      padding: 36px 28px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-xl);
+      cursor: pointer;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .role-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 4px;
+      transition: var(--transition-base);
+    }
+
+    .role-card:hover {
+      transform: translateY(-8px);
+      border-color: var(--border-light);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .role-card .role-icon {
+      width: 72px; height: 72px;
+      border-radius: var(--radius-lg);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 2rem;
+      margin: 0 auto 20px;
+      transition: var(--transition-base);
+    }
+
+    .role-card h3 {
+      font-size: 1.25rem;
+      margin-bottom: 8px;
+      font-weight: 700;
+    }
+
+    .role-card p {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+      line-height: 1.5;
+      margin-bottom: 24px;
+    }
+
+    .role-card .role-enter {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 0.85rem;
+      font-weight: 600;
+      transition: var(--transition-base);
+    }
+
+    .role-card .role-enter .arrow {
+      transition: var(--transition-base);
+    }
+
+    .role-card:hover .role-enter .arrow { transform: translateX(4px); }
+
+    /* Student card */
+    .role-card.student::before { background: var(--gradient-blue); }
+    .role-card.student .role-icon { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+    .role-card.student .role-enter { color: var(--accent-blue); }
+    .role-card.student:hover { border-color: rgba(59,130,246,0.3); box-shadow: 0 8px 32px rgba(59,130,246,0.15); }
+
+    /* Teacher card */
+    .role-card.teacher::before { background: var(--gradient-emerald); }
+    .role-card.teacher .role-icon { background: rgba(16,185,129,0.12); color: var(--accent-emerald); }
+    .role-card.teacher .role-enter { color: var(--accent-emerald); }
+    .role-card.teacher:hover { border-color: rgba(16,185,129,0.3); box-shadow: 0 8px 32px rgba(16,185,129,0.15); }
+
+    /* Admin card */
+    .role-card.admin::before { background: var(--gradient-rose); }
+    .role-card.admin .role-icon { background: rgba(244,63,94,0.12); color: var(--accent-rose); }
+    .role-card.admin .role-enter { color: var(--accent-rose); }
+    .role-card.admin:hover { border-color: rgba(244,63,94,0.3); box-shadow: 0 8px 32px rgba(244,63,94,0.15); }
+
+    /* Features section */
+    .features-section {
+      position: relative;
+      z-index: 10;
+      padding: 80px 48px;
+    }
+
+    .features-section h2 {
+      text-align: center;
+      font-size: 2rem;
+      margin-bottom: 16px;
+    }
+
+    .features-section .features-sub {
+      text-align: center;
+      color: var(--text-secondary);
+      margin-bottom: 48px;
+    }
+
+    .features-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 24px;
+      max-width: 1100px;
+      margin: 0 auto;
+    }
+
+    .feature-card {
+      padding: 28px;
+      background: var(--bg-card);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      transition: var(--transition-base);
+    }
+
+    .feature-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-4px);
+    }
+
+    .feature-card .feat-icon {
+      width: 48px; height: 48px;
+      border-radius: var(--radius-md);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      margin-bottom: 16px;
+      background: rgba(59,130,246,0.1);
+    }
+
+    .feature-card h4 { font-size: 1.05rem; margin-bottom: 8px; }
+    .feature-card p { font-size: 0.85rem; color: var(--text-muted); line-height: 1.6; }
+
+    /* Footer */
+    .landing-footer {
+      position: relative;
+      z-index: 10;
+      text-align: center;
+      padding: 32px;
+      border-top: 1px solid var(--border-subtle);
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    @media (max-width: 768px) {
+      .landing-nav { padding: 16px 20px; }
+      .hero { padding: 48px 20px 40px; }
+      .role-cards { flex-direction: column; align-items: center; }
+      .role-card { width: 100%; max-width: 340px; }
+      .features-section { padding: 48px 20px; }
+    }
+  </style>
+  <script src="js/theme.js"></script>
+</head>
+<body>
+  <div class="landing-page">
+    <!-- Animated Background -->
+    <div class="mesh-bg">
+      <div class="grid-lines"></div>
+      <div class="orb orb-1"></div>
+      <div class="orb orb-2"></div>
+      <div class="orb orb-3"></div>
+    </div>
+
+    <!-- Navigation -->
+    <nav class="landing-nav">
+      <div class="logo">
+        <div class="logo-icon" style="display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1.2rem;"></i></div>
+        <span class="logo-text">AttendAI</span>
+      </div>
+      <a href="login.html" class="btn btn-ghost btn-sm" style="display:flex;align-items:center;gap:6px;"><i class="fas fa-sign-in-alt"></i> Sign In</a>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero">
+      <div class="hero-badge">
+        <span class="live-dot"></span>
+        AI-Powered Face Recognition
+      </div>
+
+      <h1>
+        Smart Attendance<br>
+        <span class="gradient-text">Made Effortless</span>
+      </h1>
+
+      <p class="subtitle">
+        Real-time face recognition that continuously monitors and marks attendance
+        during classes. No manual roll calls. No proxy attendance. Just AI precision.
+      </p>
+
+      <!-- Role Selection -->
+      <div class="role-cards">
+        <!-- Student -->
+        <div class="role-card student" onclick="window.location.href='login.html?role=student'" id="role-student">
+          <div class="role-icon"><i class="fas fa-user-graduate" style="font-size:2rem;"></i></div>
+          <h3>Student</h3>
+          <p>View your attendance records, assignments, and academic progress in one place.</p>
+          <span class="role-enter">
+            Enter Portal <span class="arrow">→</span>
+          </span>
+        </div>
+
+        <!-- Teacher -->
+        <div class="role-card teacher" onclick="window.location.href='login.html?role=teacher'" id="role-teacher">
+          <div class="role-icon"><i class="fas fa-chalkboard-teacher" style="font-size:2rem;"></i></div>
+          <h3>Teacher</h3>
+          <p>Manage timetables, start live attendance sessions, and upload assignments.</p>
+          <span class="role-enter">
+            Enter Portal <span class="arrow">→</span>
+          </span>
+        </div>
+
+        <!-- Admin -->
+        <div class="role-card admin" onclick="window.location.href='login.html?role=admin'" id="role-admin">
+          <div class="role-icon"><i class="fas fa-shield-halved" style="font-size:2rem;"></i></div>
+          <h3>Admin</h3>
+          <p>Full system control — manage users, classes, reports, and configurations.</p>
+          <span class="role-enter">
+            Enter Portal <span class="arrow">→</span>
+          </span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+      <h2>Why <span style="color: var(--accent-blue);">AttendAI</span>?</h2>
+      <p class="features-sub">Powered by state-of-the-art AI to transform attendance management</p>
+
+      <div class="features-grid">
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(59,130,246,0.1); color: var(--accent-blue);"><i class="fas fa-face-smile-beam"></i></div>
+          <h4>Real-Time Face Tracking</h4>
+          <p>Continuously monitors students via camera throughout the entire class duration with labeled bounding boxes.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(16,185,129,0.1); color: var(--accent-emerald);"><i class="fas fa-stopwatch"></i></div>
+          <h4>Duration-Based Marking</h4>
+          <p>Students must be present for at least 70% of class time to be marked present. No shortcuts.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(139,92,246,0.1); color: var(--accent-purple);"><i class="fas fa-shield-halved"></i></div>
+          <h4>Secure Authentication</h4>
+          <p>Login via Face Recognition or UID + Password. Separate databases for complete privacy.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(245,158,11,0.1); color: var(--accent-amber);"><i class="fas fa-chart-line"></i></div>
+          <h4>Smart Analytics</h4>
+          <p>Detailed reports, trends, and insights. Export as PDF or CSV anytime.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(6,182,212,0.1); color: var(--accent-cyan);"><i class="fas fa-file-alt"></i></div>
+          <h4>Assignment Management</h4>
+          <p>Teachers upload assignments per section. Students view and download from their portal.</p>
+        </div>
+
+        <div class="feature-card">
+          <div class="feat-icon" style="background: rgba(244,63,94,0.1); color: var(--accent-rose);"><i class="fas fa-fingerprint"></i></div>
+          <h4>Anti-Spoofing</h4>
+          <p>Liveness detection prevents fake attendance via photos or videos of students.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+      <p>© 2026 AttendAI — AI Smart Attendance System. Built with <i class="fas fa-heart" style="color:var(--accent-rose);"></i> for Education.</p>
+    </footer>
+
+    <!-- Floating Chatbot Button -->
+    <a href="login.html" class="fab-chat" id="fabChat" title="AI Assistant">
+      <i class="fas fa-robot"></i>
+      <span class="fab-pulse"></span>
+    </a>
+  </div>
+
+  <style>
+    .fab-chat {
+      position: fixed; bottom: 28px; right: 28px; z-index: 999;
+      width: 60px; height: 60px; border-radius: 50%;
+      background: linear-gradient(135deg, #6366f1, #8b5cf6);
+      color: #fff; display: flex; align-items: center; justify-content: center;
+      font-size: 1.5rem; cursor: pointer; text-decoration: none;
+      box-shadow: 0 6px 24px rgba(99,102,241,0.4);
+      transition: all 0.3s cubic-bezier(0.4,0,0.2,1);
+      animation: fabBounceIn 0.6s ease 1s both;
+    }
+    .fab-chat:hover {
+      transform: scale(1.1) translateY(-2px);
+      box-shadow: 0 8px 32px rgba(99,102,241,0.5);
+    }
+    .fab-pulse {
+      position: absolute; inset: -4px; border-radius: 50%;
+      border: 2px solid rgba(99,102,241,0.5);
+      animation: fabPulse 2s ease-in-out infinite;
+    }
+    @keyframes fabPulse {
+      0%,100% { transform: scale(1); opacity: 1; }
+      50% { transform: scale(1.2); opacity: 0; }
+    }
+    @keyframes fabBounceIn {
+      0% { opacity: 0; transform: scale(0) translateY(40px); }
+      60% { transform: scale(1.15) translateY(-4px); }
+      100% { opacity: 1; transform: scale(1) translateY(0); }
+    }
+  </style>
+</body>
+</html>

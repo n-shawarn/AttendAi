@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Settings — AttendAI Admin</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:var(--gradient-rose);">🎯</div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="users.html"><span class="nav-icon">👥</span> Users</a>
+      <a class="nav-item" href="sections.html"><span class="nav-icon">🏫</span> Sections</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+      <a class="nav-item active" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>⚙️ System Settings</h1>
+      <button class="btn btn-primary" onclick="saveSettings()">💾 Save All</button>
+    </div>
+    <div style="max-width:700px;">
+      <!-- Attendance Settings -->
+      <div class="glass-card" style="margin-bottom:var(--space-xl);">
+        <h2 style="margin-bottom:var(--space-lg);">📊 Attendance Settings</h2>
+        <div style="display:flex;flex-direction:column;gap:var(--space-lg);">
+          <div class="form-group">
+            <label class="form-label">Minimum Presence Percentage</label>
+            <input type="number" class="form-input" id="minPresence" value="70" min="1" max="100">
+            <p class="text-muted text-sm" style="margin-top:4px;">Students must be present for this % of class to be marked present</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Face Similarity Threshold</label>
+            <input type="number" class="form-input" id="faceThreshold" value="0.45" step="0.01" min="0.1" max="1">
+            <p class="text-muted text-sm" style="margin-top:4px;">Higher = stricter matching (recommended: 0.40–0.50)</p>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Frame Processing Interval (ms)</label>
+            <input type="number" class="form-input" id="frameInterval" value="1000" min="200" max="5000" step="100">
+            <p class="text-muted text-sm" style="margin-top:4px;">Time between frame captures. Lower = more accurate but more load</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Security -->
+      <div class="glass-card" style="margin-bottom:var(--space-xl);">
+        <h2 style="margin-bottom:var(--space-lg);">🔒 Security</h2>
+        <div style="display:flex;flex-direction:column;gap:var(--space-lg);">
+          <div class="form-group"><label class="form-label">Max Login Attempts</label><input type="number" class="form-input" id="maxAttempts" value="5"></div>
+          <div class="form-group"><label class="form-label">Session Timeout (hours)</label><input type="number" class="form-input" id="sessionTimeout" value="24"></div>
+        </div>
+      </div>
+
+      <!-- System Info -->
+      <div class="glass-card" style="margin-bottom:var(--space-xl);">
+        <h2 style="margin-bottom:var(--space-lg);">ℹ️ System Information</h2>
+        <div style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-subtle);"><span class="text-muted">Version</span><span class="font-semibold">1.0.0</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-subtle);"><span class="text-muted">Face Model</span><span class="font-semibold">YuNet + SFace (OpenCV DNN)</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border-subtle);"><span class="text-muted">Database</span><span class="font-semibold">SQLite (3 separate DBs)</span></div>
+          <div style="display:flex;justify-content:space-between;padding:10px 0;"><span class="text-muted">Server</span><span class="font-semibold">Flask + Socket.IO + Eventlet</span></div>
+        </div>
+      </div>
+
+      <!-- Audit Log -->
+      <div class="glass-card">
+        <div class="section-header">
+          <h2>📋 Audit Log</h2>
+          <button class="btn btn-ghost btn-sm" onclick="loadAudit()">Refresh</button>
+        </div>
+        <div id="auditLog" style="max-height:400px;overflow-y:auto;">
+          <p class="text-muted text-sm">Loading...</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=admin';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+
+    async function loadSettings(){
+      try{
+        const r=await fetch(`${API}/admin/settings`,{headers});const d=await r.json();
+        if(d.success){
+          const s=d.settings;
+          if(s.min_presence)document.getElementById('minPresence').value=s.min_presence;
+          if(s.face_threshold)document.getElementById('faceThreshold').value=s.face_threshold;
+          if(s.frame_interval)document.getElementById('frameInterval').value=s.frame_interval;
+          if(s.max_login_attempts)document.getElementById('maxAttempts').value=s.max_login_attempts;
+          if(s.session_timeout)document.getElementById('sessionTimeout').value=s.session_timeout;
+        }
+      }catch(e){console.error(e);}
+    }
+
+    async function saveSettings(){
+      try{
+        const r=await fetch(`${API}/admin/settings`,{method:'POST',headers,body:JSON.stringify({
+          min_presence:document.getElementById('minPresence').value,
+          face_threshold:document.getElementById('faceThreshold').value,
+          frame_interval:document.getElementById('frameInterval').value,
+          max_login_attempts:document.getElementById('maxAttempts').value,
+          session_timeout:document.getElementById('sessionTimeout').value
+        })});
+        const d=await r.json();
+        if(d.success)showToast('Settings saved!','success');
+        else showToast(d.message,'error');
+      }catch(e){showToast('Error','error');}
+    }
+
+    async function loadAudit(){
+      try{
+        const r=await fetch(`${API}/admin/audit?limit=50`,{headers});const d=await r.json();
+        if(d.success&&d.logs.length>0){
+          document.getElementById('auditLog').innerHTML=d.logs.map(l=>`
+            <div style="display:flex;align-items:center;gap:var(--space-md);padding:8px 0;border-bottom:1px solid var(--border-subtle);font-size:0.85rem;">
+              <span class="badge ${l.user_role==='admin'?'badge-red':l.user_role==='teacher'?'badge-blue':'badge-green'}" style="min-width:60px;text-align:center;">${l.user_role}</span>
+              <span class="font-semibold">${l.user_uid}</span>
+              <span style="color:var(--accent-amber);">${l.action}</span>
+              <span class="text-muted" style="flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">${l.details||''}</span>
+              <span class="text-muted" style="font-size:0.75rem;white-space:nowrap;">${l.timestamp||''}</span>
+            </div>
+          `).join('');
+        }else{
+          document.getElementById('auditLog').innerHTML='<p class="text-muted text-sm">No audit entries yet</p>';
+        }
+      }catch(e){console.error(e);}
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=admin';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':'❌'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+
+    loadSettings();
+    loadAudit();
+  </script>
+</body>
+</html>

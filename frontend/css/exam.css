@@ -1,0 +1,849 @@
+/* ===== EXAM MODULE — Dedicated Styles ===== */
+
+/* ── Exam Creation Form ── */
+.exam-create-panel {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  position: relative;
+  overflow: hidden;
+}
+
+.exam-create-panel::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #6366f1, #8b5cf6, #a78bfa);
+}
+
+.exam-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-lg);
+}
+
+.exam-form-grid .form-group.full-width {
+  grid-column: 1 / -1;
+}
+
+.difficulty-selector {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.difficulty-btn {
+  flex: 1;
+  padding: 10px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+  text-align: center;
+}
+
+.difficulty-btn:hover {
+  border-color: var(--border-light);
+}
+
+.difficulty-btn.active-easy {
+  background: rgba(16, 185, 129, 0.15);
+  border-color: var(--accent-emerald);
+  color: var(--accent-emerald);
+}
+
+.difficulty-btn.active-medium {
+  background: rgba(245, 158, 11, 0.15);
+  border-color: var(--accent-amber);
+  color: var(--accent-amber);
+}
+
+.difficulty-btn.active-hard {
+  background: rgba(244, 63, 94, 0.15);
+  border-color: var(--accent-rose);
+  color: var(--accent-rose);
+}
+
+/* ── Questions Slider ── */
+.range-slider-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+}
+
+.range-slider-wrap input[type="range"] {
+  flex: 1;
+  -webkit-appearance: none;
+  appearance: none;
+  height: 6px;
+  background: var(--border-subtle);
+  border-radius: var(--radius-full);
+  outline: none;
+}
+
+.range-slider-wrap input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--gradient-blue);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.4);
+  transition: transform 0.15s;
+}
+
+.range-slider-wrap input[type="range"]::-webkit-slider-thumb:hover {
+  transform: scale(1.2);
+}
+
+.range-value {
+  min-width: 48px;
+  text-align: center;
+  font-weight: 700;
+  font-size: 1.1rem;
+  color: var(--accent-blue);
+  background: rgba(59, 130, 246, 0.1);
+  padding: 6px 12px;
+  border-radius: var(--radius-md);
+}
+
+/* ── Generate Button (Pulsing) ── */
+.btn-generate {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  padding: 14px 32px;
+  border: none;
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s;
+}
+
+.btn-generate:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 32px rgba(99, 102, 241, 0.4);
+}
+
+.btn-generate.loading {
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+.btn-generate.loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  animation: shimmerBtn 1.5s infinite;
+}
+
+@keyframes shimmerBtn {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── Exam Cards ── */
+.exam-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-lg);
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.exam-card:hover {
+  border-color: var(--border-light);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-md);
+}
+
+.exam-card .exam-status {
+  position: absolute;
+  top: 0; right: 0;
+  padding: 6px 16px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border-radius: 0 var(--radius-lg) 0 var(--radius-md);
+}
+
+.exam-card .exam-status.draft { background: rgba(100, 116, 139, 0.2); color: var(--text-muted); }
+.exam-card .exam-status.published { background: rgba(16, 185, 129, 0.2); color: var(--accent-emerald); }
+.exam-card .exam-status.closed { background: rgba(244, 63, 94, 0.2); color: var(--accent-rose); }
+
+.exam-card-title {
+  font-size: 1.1rem;
+  font-weight: 700;
+  margin-bottom: 6px;
+}
+
+.exam-card-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-md);
+  margin: var(--space-md) 0;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.exam-card-meta span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.exam-card-actions {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+
+.exam-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+  gap: var(--space-lg);
+}
+
+/* ── Question Preview Cards ── */
+.question-preview {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  margin-bottom: var(--space-md);
+  animation: fadeInUp 0.3s ease;
+  transition: var(--transition-base);
+}
+
+.question-preview:hover {
+  border-color: var(--border-light);
+}
+
+.question-preview .q-number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.15);
+  color: var(--accent-indigo);
+  font-weight: 700;
+  font-size: 0.85rem;
+  margin-right: 12px;
+  flex-shrink: 0;
+}
+
+.question-preview .q-text {
+  font-size: 0.95rem;
+  font-weight: 600;
+  margin-bottom: var(--space-md);
+  line-height: 1.5;
+}
+
+.question-preview .q-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+}
+
+.question-preview .q-option {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-input);
+}
+
+.question-preview .q-option.correct {
+  border-color: var(--accent-emerald);
+  background: rgba(16, 185, 129, 0.1);
+  color: var(--accent-emerald);
+}
+
+/* ── Results Table ── */
+.results-table-wrap {
+  overflow-x: auto;
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-subtle);
+}
+
+.risk-badge {
+  padding: 4px 12px;
+  border-radius: var(--radius-full);
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.risk-low { background: rgba(16, 185, 129, 0.15); color: var(--accent-emerald); }
+.risk-medium { background: rgba(245, 158, 11, 0.15); color: var(--accent-amber); }
+.risk-high { background: rgba(244, 63, 94, 0.15); color: var(--accent-rose); }
+
+/* ── Proctor Detail Modal ── */
+.proctor-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: var(--space-md);
+  margin: var(--space-lg) 0;
+}
+
+.proctor-stat-card {
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-lg);
+  text-align: center;
+}
+
+.proctor-stat-card .psc-value {
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+.proctor-stat-card .psc-label {
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.proctor-stat-card .psc-icon {
+  font-size: 1.5rem;
+  margin-bottom: var(--space-sm);
+  opacity: 0.7;
+}
+
+/* ===== STUDENT EXAM TAKING UI ===== */
+
+/* ── Exam Timer Bar ── */
+.exam-timer-bar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 56px;
+  background: var(--bg-sidebar);
+  border-bottom: 1px solid var(--border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 var(--space-xl);
+  z-index: 200;
+  backdrop-filter: blur(20px);
+}
+
+.exam-timer {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'Courier New', monospace;
+  font-size: 1.3rem;
+  font-weight: 700;
+  color: var(--accent-emerald);
+}
+
+.exam-timer.warning { color: var(--accent-amber); }
+.exam-timer.critical { color: var(--accent-rose); animation: pulse 1s infinite; }
+
+.timer-progress {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  background: var(--gradient-blue);
+  transition: width 1s linear;
+}
+
+.timer-progress.warning { background: var(--gradient-amber); }
+.timer-progress.critical { background: var(--gradient-rose); }
+
+/* ── Exam Content Area ── */
+.exam-content {
+  margin-top: 72px;
+  padding: var(--space-xl);
+  max-width: 900px;
+  margin-left: auto;
+  margin-right: auto;
+  padding-bottom: 100px;
+}
+
+/* ── Progress Stepper ── */
+.exam-progress {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-bottom: var(--space-xl);
+  flex-wrap: wrap;
+}
+
+.progress-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  transition: all 0.3s;
+  cursor: default;
+}
+
+.progress-dot.answered {
+  background: var(--accent-emerald);
+  box-shadow: 0 0 6px rgba(16, 185, 129, 0.4);
+}
+
+.progress-dot.current {
+  background: var(--accent-blue);
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.5);
+  transform: scale(1.3);
+}
+
+.progress-dot.skipped {
+  background: var(--accent-amber);
+}
+
+/* ── Question Card (Student) ── */
+.exam-question-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  animation: fadeInUp 0.4s ease;
+}
+
+.exam-question-num {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  font-weight: 800;
+  font-size: 1rem;
+  margin-bottom: var(--space-md);
+}
+
+.exam-question-text {
+  font-size: 1.15rem;
+  font-weight: 600;
+  line-height: 1.7;
+  margin-bottom: var(--space-xl);
+  color: var(--text-primary);
+}
+
+/* ── MCQ Options ── */
+.mcq-options {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+
+.mcq-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 16px 20px;
+  background: var(--bg-input);
+  border: 2px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  transition: all 0.25s ease;
+  position: relative;
+  overflow: hidden;
+}
+
+.mcq-option:hover {
+  border-color: rgba(99, 102, 241, 0.4);
+  background: rgba(99, 102, 241, 0.05);
+  transform: translateX(4px);
+}
+
+.mcq-option.selected {
+  border-color: var(--accent-indigo);
+  background: rgba(99, 102, 241, 0.1);
+  box-shadow: 0 0 16px rgba(99, 102, 241, 0.15);
+}
+
+.mcq-option.selected::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--gradient-blue);
+}
+
+.mcq-option .option-letter {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--border-subtle);
+  font-weight: 700;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  transition: all 0.25s;
+}
+
+.mcq-option.selected .option-letter {
+  background: var(--gradient-blue);
+  color: #fff;
+}
+
+.mcq-option .option-text {
+  font-size: 0.95rem;
+  line-height: 1.5;
+  color: var(--text-secondary);
+}
+
+.mcq-option.selected .option-text {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+/* ── Exam Navigation ── */
+.exam-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-xl);
+  gap: var(--space-md);
+}
+
+.exam-nav .question-counter {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  font-weight: 500;
+}
+
+/* ── Proctor Camera Overlay (PiP) ── */
+.proctor-cam {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  width: 180px;
+  height: 135px;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  border: 2px solid var(--accent-emerald);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  z-index: 300;
+  background: #000;
+  transition: border-color 0.3s;
+}
+
+.proctor-cam video {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+.proctor-cam .cam-status {
+  position: absolute;
+  top: 6px;
+  left: 6px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-full);
+  background: rgba(0, 0, 0, 0.6);
+  font-size: 0.6rem;
+  font-weight: 600;
+  color: var(--accent-emerald);
+  backdrop-filter: blur(8px);
+}
+
+.proctor-cam .cam-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--accent-emerald);
+  animation: pulse 1.5s infinite;
+}
+
+.proctor-cam.alert-state {
+  border-color: var(--accent-rose);
+  animation: camAlertPulse 0.8s ease infinite;
+}
+
+.proctor-cam.alert-state .cam-status {
+  color: var(--accent-rose);
+}
+
+.proctor-cam.alert-state .cam-dot {
+  background: var(--accent-rose);
+}
+
+@keyframes camAlertPulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(244, 63, 94, 0.3); }
+  50% { box-shadow: 0 0 24px rgba(244, 63, 94, 0.6); }
+}
+
+/* ── Proctor Alert Overlay ── */
+.proctor-alert {
+  position: fixed;
+  top: 70px;
+  left: 50%;
+  transform: translateX(-50%) translateY(-20px);
+  background: rgba(244, 63, 94, 0.95);
+  color: #fff;
+  padding: 14px 28px;
+  border-radius: var(--radius-lg);
+  font-weight: 700;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  z-index: 400;
+  box-shadow: 0 8px 32px rgba(244, 63, 94, 0.4);
+  animation: alertSlideIn 0.4s ease forwards;
+  opacity: 0;
+}
+
+@keyframes alertSlideIn {
+  to { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.proctor-alert.fade-out {
+  animation: alertSlideOut 0.4s ease forwards;
+}
+
+@keyframes alertSlideOut {
+  to { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+}
+
+/* ── Exam Start Screen ── */
+.exam-start-screen {
+  max-width: 600px;
+  margin: 80px auto;
+  text-align: center;
+}
+
+.exam-start-card {
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl) var(--space-xl);
+}
+
+.exam-start-card .exam-icon {
+  width: 80px;
+  height: 80px;
+  margin: 0 auto var(--space-lg);
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.15), rgba(139, 92, 246, 0.15));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+}
+
+.exam-start-card h2 {
+  margin-bottom: var(--space-sm);
+}
+
+.exam-rules {
+  text-align: left;
+  margin: var(--space-xl) 0;
+  padding: var(--space-lg);
+  background: var(--bg-input);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+}
+
+.exam-rules li {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  padding-left: 8px;
+  line-height: 1.5;
+  list-style: none;
+  position: relative;
+}
+
+.exam-rules li::before {
+  content: '⚡';
+  position: absolute;
+  left: -18px;
+}
+
+/* ── Exam Completed Screen ── */
+.exam-result-card {
+  max-width: 500px;
+  margin: 80px auto;
+  background: var(--bg-card);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-xl);
+  padding: var(--space-2xl);
+  text-align: center;
+  animation: fadeInUp 0.5s ease;
+}
+
+.score-circle {
+  width: 140px;
+  height: 140px;
+  margin: 0 auto var(--space-xl);
+  position: relative;
+}
+
+.score-circle svg {
+  transform: rotate(-90deg);
+}
+
+.score-circle .score-text {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 2rem;
+  font-weight: 800;
+  font-family: var(--font-heading);
+}
+
+/* ── Available Exam Card (Student) ── */
+.available-exam-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: var(--space-xl);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  transition: all 0.3s ease;
+  margin-bottom: var(--space-md);
+}
+
+.available-exam-card:hover {
+  border-color: var(--border-light);
+  transform: translateX(4px);
+  box-shadow: var(--shadow-sm);
+}
+
+.available-exam-card .exam-info {
+  flex: 1;
+}
+
+.available-exam-card .exam-title {
+  font-size: 1.05rem;
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+
+.available-exam-card .exam-details {
+  display: flex;
+  gap: var(--space-md);
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  flex-wrap: wrap;
+}
+
+.available-exam-card .exam-details span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* ── Tab System for exam views ── */
+.exam-tabs {
+  display: flex;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xl);
+  border-bottom: 1px solid var(--border-subtle);
+  padding-bottom: 0;
+}
+
+.exam-tab {
+  padding: 12px 24px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  transition: all 0.25s;
+}
+
+.exam-tab:hover { color: var(--text-secondary); }
+
+.exam-tab.active {
+  color: var(--accent-indigo);
+  border-bottom-color: var(--accent-indigo);
+}
+
+/* ── AI Generating Animation ── */
+.ai-generating {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: var(--space-2xl);
+  gap: var(--space-lg);
+}
+
+.ai-brain-icon {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.2), rgba(139, 92, 246, 0.2));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  animation: float 2s ease-in-out infinite;
+}
+
+.generating-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.generating-dots span {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--accent-indigo);
+  animation: dotBounce 1.4s ease-in-out infinite;
+}
+
+.generating-dots span:nth-child(2) { animation-delay: 0.2s; }
+.generating-dots span:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes dotBounce {
+  0%, 80%, 100% { transform: scale(0.6); opacity: 0.4; }
+  40% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+  .exam-form-grid { grid-template-columns: 1fr; }
+  .exam-cards-grid { grid-template-columns: 1fr; }
+  .proctor-stats-grid { grid-template-columns: 1fr; }
+  .question-preview .q-options { grid-template-columns: 1fr; }
+  .proctor-cam { width: 120px; height: 90px; }
+  .exam-content { padding: var(--space-md); }
+}

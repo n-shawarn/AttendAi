@@ -1,0 +1,470 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Exams — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/exam.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="../js/theme.js"></script>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <span class="brand-text">AttendAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item active" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;">
+        <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div>
+        <h1><i class="fas fa-clipboard-check" style="color:var(--accent-indigo);margin-right:10px;"></i>AI Exam Center</h1>
+        <p class="text-muted text-sm">Create AI-powered MCQ exams with intelligent proctoring</p>
+      </div>
+      <div class="top-bar-actions">
+        <button class="btn btn-primary" onclick="showTab('create')"><i class="fas fa-plus"></i> New Exam</button>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="exam-tabs">
+      <button class="exam-tab active" onclick="showTab('exams')" id="tabExams">My Exams</button>
+      <button class="exam-tab" onclick="showTab('create')" id="tabCreate">Create Exam</button>
+      <button class="exam-tab" onclick="showTab('results')" id="tabResults">Results</button>
+    </div>
+
+    <!-- Tab: My Exams -->
+    <div id="panelExams" class="tab-content active">
+      <div class="exam-cards-grid" id="examsList">
+        <div class="empty-state" style="grid-column:1/-1;padding:var(--space-3xl);">
+          <div class="empty-icon"><i class="fas fa-clipboard-list" style="font-size:2.5rem;color:var(--text-muted);opacity:0.4;"></i></div>
+          <h3>No exams yet</h3>
+          <p>Create your first AI-powered exam to get started</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Create Exam -->
+    <div id="panelCreate" class="tab-content" style="display:none;">
+      <div class="exam-create-panel animate-fadeInUp">
+        <h2 style="margin-bottom:var(--space-lg);display:flex;align-items:center;gap:10px;">
+          <i class="fas fa-wand-magic-sparkles" style="color:var(--accent-purple);"></i> Generate Exam with AI
+        </h2>
+        <div class="exam-form-grid">
+          <div class="form-group">
+            <label class="form-label">Exam Title</label>
+            <input type="text" class="form-input" id="examTitle" placeholder="e.g. Mid-Term Quiz">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Subject</label>
+            <input type="text" class="form-input" id="examSubject" placeholder="e.g. Mathematics">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Topic</label>
+            <input type="text" class="form-input" id="examTopic" placeholder="e.g. Calculus - Derivatives">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Course / Class</label>
+            <input type="text" class="form-input" id="examCourse" placeholder="e.g. B.Tech CSE 2nd Year">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Section</label>
+            <input type="text" class="form-input" id="examSection" placeholder="e.g. A">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Duration (minutes)</label>
+            <input type="number" class="form-input" id="examDuration" value="30" min="5" max="180">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Difficulty Level</label>
+            <div class="difficulty-selector">
+              <button class="difficulty-btn" onclick="setDifficulty('easy',this)">🟢 Easy</button>
+              <button class="difficulty-btn active-medium" onclick="setDifficulty('medium',this)">🟡 Medium</button>
+              <button class="difficulty-btn" onclick="setDifficulty('hard',this)">🔴 Hard</button>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Number of Questions</label>
+            <div class="range-slider-wrap">
+              <input type="range" id="examNumQ" min="5" max="50" value="10" oninput="document.getElementById('numQVal').textContent=this.value">
+              <span class="range-value" id="numQVal">10</span>
+            </div>
+          </div>
+          <div class="form-group full-width" style="text-align:center;margin-top:var(--space-md);">
+            <button class="btn-generate" id="btnGenerate" onclick="generateExam()">
+              <i class="fas fa-sparkles"></i> Generate Questions with AI
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- AI Generating Animation -->
+      <div id="generatingState" style="display:none;" class="glass-card" style="margin-top:var(--space-lg);">
+        <div class="ai-generating">
+          <div class="ai-brain-icon"><i class="fas fa-brain" style="color:var(--accent-indigo);"></i></div>
+          <h3>AI is generating questions...</h3>
+          <p class="text-muted">Crafting MCQs based on your requirements</p>
+          <div class="generating-dots"><span></span><span></span><span></span></div>
+        </div>
+      </div>
+
+      <!-- Preview Generated Questions -->
+      <div id="previewPanel" style="display:none;margin-top:var(--space-xl);">
+        <div class="glass-card">
+          <div class="section-header">
+            <h2><i class="fas fa-eye" style="color:var(--accent-blue);margin-right:8px;"></i>Preview Questions</h2>
+            <div style="display:flex;gap:var(--space-sm);">
+              <button class="btn btn-ghost btn-sm" onclick="generateExam()"><i class="fas fa-redo"></i> Regenerate</button>
+              <button class="btn btn-primary btn-sm" onclick="saveExam()"><i class="fas fa-save"></i> Save as Draft</button>
+              <button class="btn btn-success btn-sm" onclick="saveAndPublish()"><i class="fas fa-paper-plane"></i> Save & Publish</button>
+            </div>
+          </div>
+          <div id="questionsPreview"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tab: Results -->
+    <div id="panelResults" class="tab-content" style="display:none;">
+      <div id="resultsContent">
+        <div class="empty-state" style="padding:var(--space-3xl);">
+          <div class="empty-icon"><i class="fas fa-chart-bar" style="font-size:2.5rem;color:var(--text-muted);opacity:0.4;"></i></div>
+          <h3>Select an exam to view results</h3>
+          <p>Publish an exam and wait for submissions</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Results Detail Modal -->
+  <div class="modal-overlay" id="resultModal">
+    <div class="modal-content" style="max-width:850px;max-height:85vh;overflow-y:auto;">
+      <div class="modal-header">
+        <h3 id="modalStudentName">Student Result</h3>
+        <button class="modal-close" onclick="closeModal()">&times;</button>
+      </div>
+      <div id="modalBody"></div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- JAVASCRIPT PLACEHOLDER - Will be added -->
+  <script>
+  /* ── Part 1: Config & Auth ── */
+  const API = 'http://localhost:5000/api';
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token || !user.uid) window.location.href = '../login.html?role=teacher';
+  const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+  let currentDifficulty = 'medium';
+  let generatedQuestions = [];
+  let allExams = [];
+
+  function logout() { localStorage.clear(); window.location.href = '../login.html?role=teacher'; }
+  function showToast(msg, type='info') {
+    const c = document.getElementById('toastContainer');
+    const t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span><i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i></span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;
+    c.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 4000);
+  }
+
+  function showTab(tab) {
+    document.querySelectorAll('.tab-content').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.exam-tab').forEach(t => t.classList.remove('active'));
+    if (tab === 'exams') { document.getElementById('panelExams').style.display = 'block'; document.getElementById('tabExams').classList.add('active'); }
+    else if (tab === 'create') { document.getElementById('panelCreate').style.display = 'block'; document.getElementById('tabCreate').classList.add('active'); }
+    else if (tab === 'results') { document.getElementById('panelResults').style.display = 'block'; document.getElementById('tabResults').classList.add('active'); }
+  }
+
+  function setDifficulty(level, btn) {
+    currentDifficulty = level;
+    document.querySelectorAll('.difficulty-btn').forEach(b => b.className = 'difficulty-btn');
+    btn.classList.add('active-' + level);
+  }
+
+  function closeModal() { document.getElementById('resultModal').classList.remove('active'); }
+
+  /* ── Part 2: Generate Exam ── */
+  async function generateExam() {
+    const title = document.getElementById('examTitle').value.trim();
+    const subject = document.getElementById('examSubject').value.trim();
+    const topic = document.getElementById('examTopic').value.trim();
+    if (!title || !subject || !topic) { showToast('Please fill Title, Subject & Topic', 'error'); return; }
+
+    const numQ = document.getElementById('examNumQ').value;
+    const course = document.getElementById('examCourse').value.trim();
+    document.getElementById('generatingState').style.display = 'block';
+    document.getElementById('previewPanel').style.display = 'none';
+    document.getElementById('btnGenerate').classList.add('loading');
+    document.getElementById('btnGenerate').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+
+    try {
+      const res = await fetch(`${API}/exams`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ title, subject, topic, course, section: document.getElementById('examSection').value.trim(),
+          difficulty: currentDifficulty, num_questions: parseInt(numQ),
+          duration_min: parseInt(document.getElementById('examDuration').value) || 30 })
+      });
+      const data = await res.json();
+      if (data.success) {
+        generatedQuestions = data.questions || [];
+        renderPreview(generatedQuestions);
+        document.getElementById('generatingState').style.display = 'none';
+        document.getElementById('previewPanel').style.display = 'block';
+        showToast(`${generatedQuestions.length} questions generated!`, 'success');
+        allExams.unshift(data.exam);
+        window._lastExamId = data.exam_id;
+      } else { showToast(data.message || 'Generation failed', 'error'); }
+    } catch(e) { showToast('Network error', 'error'); console.error(e); }
+    document.getElementById('btnGenerate').classList.remove('loading');
+    document.getElementById('btnGenerate').innerHTML = '<i class="fas fa-sparkles"></i> Generate Questions with AI';
+    document.getElementById('generatingState').style.display = 'none';
+  }
+
+  function renderPreview(questions) {
+    document.getElementById('questionsPreview').innerHTML = questions.map((q, i) => `
+      <div class="question-preview">
+        <div style="display:flex;align-items:flex-start;">
+          <span class="q-number">${i+1}</span>
+          <div style="flex:1;">
+            <div class="q-text">${q.question_text || q.question}</div>
+            <div class="q-options">
+              <div class="q-option ${q.correct_option==='A'?'correct':''}"><strong>A.</strong> ${q.option_a}</div>
+              <div class="q-option ${q.correct_option==='B'?'correct':''}"><strong>B.</strong> ${q.option_b}</div>
+              <div class="q-option ${q.correct_option==='C'?'correct':''}"><strong>C.</strong> ${q.option_c}</div>
+              <div class="q-option ${q.correct_option==='D'?'correct':''}"><strong>D.</strong> ${q.option_d}</div>
+            </div>
+            ${q.explanation ? `<div style="margin-top:10px;font-size:0.8rem;color:var(--accent-emerald);"><i class="fas fa-lightbulb"></i> ${q.explanation}</div>` : ''}
+          </div>
+        </div>
+      </div>`).join('');
+  }
+
+  /* ── Part 3: Save & Publish ── */
+  async function saveExam() {
+    if (!window._lastExamId) { showToast('Generate questions first', 'error'); return; }
+    showToast('Exam saved as draft!', 'success');
+    showTab('exams'); loadExams();
+  }
+
+  async function saveAndPublish() {
+    if (!window._lastExamId) { showToast('Generate questions first', 'error'); return; }
+    try {
+      const res = await fetch(`${API}/exams/${window._lastExamId}/publish`, { method: 'POST', headers });
+      const data = await res.json();
+      if (data.success) { showToast('Exam published! Students can now take it.', 'success'); showTab('exams'); loadExams(); }
+      else showToast(data.message || 'Publish failed', 'error');
+    } catch(e) { showToast('Network error', 'error'); }
+  }
+
+  async function publishExam(id) {
+    try {
+      const res = await fetch(`${API}/exams/${id}/publish`, { method: 'POST', headers });
+      const data = await res.json();
+      if (data.success) { showToast('Exam published!', 'success'); loadExams(); }
+      else showToast(data.message, 'error');
+    } catch(e) { showToast('Error', 'error'); }
+  }
+
+  async function closeExam(id) {
+    try {
+      const res = await fetch(`${API}/exams/${id}/close`, { method: 'POST', headers });
+      const data = await res.json();
+      if (data.success) { showToast('Exam closed', 'success'); loadExams(); }
+      else showToast(data.message, 'error');
+    } catch(e) { showToast('Error', 'error'); }
+  }
+
+  async function deleteExam(id) {
+    if (!confirm('Delete this exam permanently?')) return;
+    try {
+      const res = await fetch(`${API}/exams/${id}/delete`, { method: 'DELETE', headers });
+      const data = await res.json();
+      if (data.success) { showToast('Exam deleted', 'success'); loadExams(); }
+      else showToast(data.message, 'error');
+    } catch(e) { showToast('Error', 'error'); }
+  }
+
+  /* ── Part 4: Load & Render Exams ── */
+  async function loadExams() {
+    try {
+      const res = await fetch(`${API}/exams`, { headers });
+      const data = await res.json();
+      if (data.success) { allExams = data.exams || []; renderExams(allExams); }
+    } catch(e) { console.error(e); }
+  }
+
+  function renderExams(exams) {
+    if (!exams.length) {
+      document.getElementById('examsList').innerHTML = `<div class="empty-state" style="grid-column:1/-1;padding:var(--space-3xl);">
+        <div class="empty-icon"><i class="fas fa-clipboard-list" style="font-size:2.5rem;color:var(--text-muted);opacity:0.4;"></i></div>
+        <h3>No exams yet</h3><p>Create your first AI-powered exam</p></div>`;
+      return;
+    }
+    document.getElementById('examsList').innerHTML = exams.map(e => {
+      const statusCls = e.status === 'published' ? 'published' : e.status === 'closed' ? 'closed' : 'draft';
+      let actions = '';
+      if (e.status === 'draft') actions = `<button class="btn btn-primary btn-sm" onclick="publishExam('${e.id}')"><i class="fas fa-paper-plane"></i> Publish</button><button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')"><i class="fas fa-trash"></i></button>`;
+      else if (e.status === 'published') actions = `<button class="btn btn-ghost btn-sm" onclick="closeExam('${e.id}')"><i class="fas fa-lock"></i> Close</button><button class="btn btn-primary btn-sm" onclick="viewResults('${e.id}')"><i class="fas fa-chart-bar"></i> Results</button>`;
+      else actions = `<button class="btn btn-primary btn-sm" onclick="viewResults('${e.id}')"><i class="fas fa-chart-bar"></i> Results</button><button class="btn btn-danger btn-sm" onclick="deleteExam('${e.id}')"><i class="fas fa-trash"></i></button>`;
+      return `<div class="exam-card animate-fadeInUp">
+        <div class="exam-status ${statusCls}">${e.status}</div>
+        <div class="exam-card-title">${e.title}</div>
+        <div class="exam-card-meta">
+          <span><i class="fas fa-book"></i> ${e.subject}</span>
+          <span><i class="fas fa-tag"></i> ${e.topic || 'General'}</span>
+          <span><i class="fas fa-clock"></i> ${e.duration_min} min</span>
+          <span><i class="fas fa-list"></i> ${e.num_questions} Q</span>
+          <span><i class="fas fa-signal"></i> ${e.difficulty}</span>
+        </div>
+        <div class="exam-card-actions">${actions}</div>
+      </div>`;
+    }).join('');
+  }
+
+  /* ── Part 5: View Results ── */
+  async function viewResults(examId) {
+    showTab('results');
+    document.getElementById('resultsContent').innerHTML = '<div style="text-align:center;padding:40px;"><div class="loader" style="margin:0 auto;"></div><p class="text-muted" style="margin-top:16px;">Loading results...</p></div>';
+    try {
+      const res = await fetch(`${API}/exams/${examId}/results`, { headers });
+      const data = await res.json();
+      if (data.success) renderResults(data.exam, data.results);
+      else document.getElementById('resultsContent').innerHTML = '<p class="text-muted text-center">No results found</p>';
+    } catch(e) { console.error(e); }
+  }
+
+  function renderResults(exam, results) {
+    if (!results.length) {
+      document.getElementById('resultsContent').innerHTML = `<div class="glass-card"><div class="section-header"><h2>${exam.title} — Results</h2></div>
+        <div class="empty-state"><h3>No submissions yet</h3><p>Students haven't taken this exam yet</p></div></div>`;
+      return;
+    }
+    const avgScore = Math.round(results.reduce((s,r) => s + r.percentage, 0) / results.length);
+    const flagged = results.filter(r => r.risk_level === 'high').length;
+    document.getElementById('resultsContent').innerHTML = `
+      <div class="glass-card" style="margin-bottom:var(--space-lg);">
+        <div class="section-header"><h2><i class="fas fa-chart-bar" style="color:var(--accent-indigo);margin-right:8px;"></i>${exam.title}</h2>
+          <span class="badge badge-purple">${results.length} submissions</span></div>
+        <div class="dashboard-grid" style="margin-bottom:var(--space-lg);">
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);"><i class="fas fa-chart-line"></i></div>
+            <div class="stat-value">${avgScore}%</div><div class="stat-label">Average Score</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);"><i class="fas fa-users"></i></div>
+            <div class="stat-value">${results.length}</div><div class="stat-label">Total Submissions</div></div>
+          <div class="stat-card"><div class="stat-icon" style="background:rgba(244,63,94,0.12);color:var(--accent-rose);"><i class="fas fa-exclamation-triangle"></i></div>
+            <div class="stat-value">${flagged}</div><div class="stat-label">Flagged Students</div></div>
+        </div>
+        <div class="results-table-wrap" style="overflow-x:auto;">
+          <table class="data-table">
+            <thead><tr><th>Student</th><th>Score</th><th>Time</th><th>Head Turns</th><th>Eye Alerts</th><th>Lip Moves</th><th>Tab Switches</th><th>Face Missing</th><th>Total Warns</th><th>Risk</th><th>Actions</th></tr></thead>
+            <tbody>${results.map(r => {
+              const ps = typeof r.proctor_summary === 'string' ? JSON.parse(r.proctor_summary || '{}') : (r.proctor_summary || {});
+              return `<tr>
+              <td><strong>${r.student_name || r.student_uid}</strong><br><span class="text-xs text-muted">${r.student_uid}</span></td>
+              <td><strong>${r.score}/${r.total}</strong> (${Math.round(r.percentage)}%)</td>
+              <td>${Math.floor(r.time_taken_sec/60)}m ${r.time_taken_sec%60}s</td>
+              <td style="color:${r.head_turn_count>3?'var(--accent-rose)':'inherit'}">${r.head_turn_count}</td>
+              <td style="color:${r.eye_movement_alerts>5?'var(--accent-rose)':'inherit'}">${r.eye_movement_alerts}</td>
+              <td style="color:${(ps.lipMovements||0)>3?'var(--accent-rose)':'inherit'}">${ps.lipMovements||0}</td>
+              <td style="color:${r.tab_switch_count>0?'var(--accent-rose)':'inherit'};font-weight:${r.tab_switch_count>0?'700':'400'}">${r.tab_switch_count}</td>
+              <td>${r.face_not_visible_count}</td>
+              <td><strong style="color:${(ps.totalWarnings||0)>10?'var(--accent-rose)':(ps.totalWarnings||0)>5?'var(--accent-amber)':'var(--accent-emerald)'}">${ps.totalWarnings||0}</strong></td>
+              <td><span class="risk-badge risk-${r.risk_level}">${r.risk_level}</span></td>
+              <td><button class="btn btn-ghost btn-sm" onclick='showStudentDetail(${JSON.stringify(r).replace(/'/g,"&#39;")})'>
+                <i class="fas fa-eye"></i> Detail</button></td>
+            </tr>`}).join('')}</tbody>
+          </table>
+        </div>
+      </div>`;
+  }
+
+  function showStudentDetail(r) {
+    document.getElementById('modalStudentName').textContent = (r.student_name || r.student_uid) + ' — Proctoring Report';
+    const proctor = typeof r.proctor_summary === 'string' ? JSON.parse(r.proctor_summary || '{}') : (r.proctor_summary || {});
+    const alerts = proctor.alerts || [];
+    const typeIcons = { head_turn:'🔄', eye_movement:'👁️', tab_switch:'🚨', window_blur:'⚠️', face_not_visible:'🚫', lip_movement:'🗣️', blocked_action:'🔒', blocked_key:'⌨️', large_movement:'🏃' };
+    const typeLabels = { head_turn:'Head Turn', eye_movement:'Eye Movement', tab_switch:'Tab Switch', window_blur:'Window Blur', face_not_visible:'Face Missing', lip_movement:'Lip Movement', blocked_action:'Blocked Action', blocked_key:'Blocked Key', large_movement:'Body Movement' };
+    const typeColors = { head_turn:'var(--accent-amber)', eye_movement:'var(--accent-blue)', tab_switch:'var(--accent-rose)', window_blur:'var(--accent-amber)', face_not_visible:'var(--accent-rose)', lip_movement:'var(--accent-purple)', blocked_action:'var(--accent-rose)', blocked_key:'var(--accent-rose)', large_movement:'var(--accent-amber)' };
+
+    // Build violation timeline
+    let timelineHTML = '';
+    if (alerts.length > 0) {
+      timelineHTML = `<h4 style="margin:var(--space-lg) 0 var(--space-md);display:flex;align-items:center;gap:8px;">
+        <i class="fas fa-timeline" style="color:var(--accent-rose);"></i> Violation Timeline (${alerts.length} events)</h4>
+      <div style="max-height:300px;overflow-y:auto;border:1px solid var(--border-subtle);border-radius:var(--radius-md);padding:0;">
+        <table class="data-table" style="margin:0;font-size:0.82rem;">
+          <thead><tr><th style="width:60px">#</th><th style="width:80px">Time</th><th style="width:50px">Q#</th><th>Type</th><th>Detail</th></tr></thead>
+          <tbody>${alerts.map((a, i) => {
+            const time = a.elapsed || new Date(a.time).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+            const icon = typeIcons[a.type] || '⚠️';
+            const label = typeLabels[a.type] || a.type;
+            const color = typeColors[a.type] || 'var(--text-muted)';
+            return `<tr style="border-bottom:1px solid var(--border-subtle);">
+              <td style="font-weight:600;color:var(--text-muted);">${i+1}</td>
+              <td style="font-family:'JetBrains Mono',monospace;font-size:0.78rem;">${time}</td>
+              <td><span class="badge badge-blue" style="font-size:0.7rem;">Q${a.q||'?'}</span></td>
+              <td style="color:${color};font-weight:600;">${icon} ${label}</td>
+              <td style="font-size:0.78rem;color:var(--text-secondary);">${a.detail || '—'}</td>
+            </tr>`;
+          }).join('')}</tbody>
+        </table>
+      </div>`;
+    } else {
+      timelineHTML = `<div style="margin-top:var(--space-lg);padding:var(--space-lg);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-md);text-align:center;">
+        <i class="fas fa-check-circle" style="color:var(--accent-emerald);font-size:1.5rem;"></i>
+        <p style="margin-top:8px;color:var(--accent-emerald);font-weight:600;">No violations recorded — Clean exam session</p></div>`;
+    }
+
+    document.getElementById('modalBody').innerHTML = `
+      <div style="margin-bottom:var(--space-lg);">
+        <span class="badge badge-blue" style="margin-right:8px;">${r.score}/${r.total} (${Math.round(r.percentage)}%)</span>
+        <span class="risk-badge risk-${r.risk_level}">${r.risk_level} risk</span>
+        <span class="badge badge-purple" style="margin-left:8px;">${proctor.totalWarnings||0} total warnings</span>
+      </div>
+      <h4 style="margin-bottom:var(--space-md);"><i class="fas fa-shield-alt" style="color:var(--accent-purple);margin-right:6px;"></i>Proctoring Summary</h4>
+      <div class="proctor-stats-grid" style="grid-template-columns:repeat(3,1fr);">
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--accent-amber);"><i class="fas fa-head-side"></i></div><div class="psc-value">${r.head_turn_count}</div><div class="psc-label">Head Turns</div></div>
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--accent-rose);"><i class="fas fa-eye"></i></div><div class="psc-value">${r.eye_movement_alerts}</div><div class="psc-label">Eye Alerts</div></div>
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--accent-purple);"><i class="fas fa-lips"></i></div><div class="psc-value">${proctor.lipMovements||0}</div><div class="psc-label">Lip Movements</div></div>
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--accent-blue);"><i class="fas fa-window-restore"></i></div><div class="psc-value">${r.tab_switch_count}</div><div class="psc-label">Tab Switches</div></div>
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--text-muted);"><i class="fas fa-user-slash"></i></div><div class="psc-value">${r.face_not_visible_count}</div><div class="psc-label">Face Missing</div></div>
+        <div class="proctor-stat-card"><div class="psc-icon" style="color:var(--accent-rose);"><i class="fas fa-exclamation-circle"></i></div><div class="psc-value" style="color:${(proctor.totalWarnings||0)>10?'var(--accent-rose)':'var(--accent-emerald)'}">${proctor.totalWarnings||0}</div><div class="psc-label">Total Warnings</div></div>
+      </div>
+      ${timelineHTML}
+      ${r.ai_analysis ? `<div style="margin-top:var(--space-lg);padding:var(--space-lg);background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:var(--radius-md);">
+        <h4 style="margin-bottom:8px;"><i class="fas fa-robot" style="color:var(--accent-indigo);margin-right:6px;"></i>AI Integrity Analysis</h4>
+        <p style="font-size:0.9rem;color:var(--text-secondary);line-height:1.6;">${r.ai_analysis}</p></div>` : ''}`;
+    document.getElementById('resultModal').classList.add('active');
+  }
+
+  // Init
+  loadExams();
+  </script>
+</body>
+</html>

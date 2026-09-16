@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .action-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-md); }
+    @keyframes fadeInDown { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.5; } }
+    @keyframes shimmer { 0% { background-position: -200% 0; } 100% { background-position: 200% 0; } }
+    .si { width:20px; height:20px; display:inline-flex; align-items:center; justify-content:center; font-size:0.85rem; }
+    .stat-icon i { font-size: 1.3rem; }
+    .nav-icon i { font-size: 1rem; }
+    .tl-locked { opacity: 0.45; pointer-events: none; position: relative; }
+    .tl-locked::after { content:'COMPLETED'; position:absolute; top:50%; right:16px; transform:translateY(-50%); font-size:0.6rem; font-weight:700; letter-spacing:0.1em; color:var(--accent-blue); background:rgba(59,130,246,0.1); padding:3px 10px; border-radius:20px; border:1px solid rgba(59,130,246,0.2); }
+    .tl-expired { opacity: 0.5; }
+    .tl-expired .start-btn { display:none !important; }
+    .tl-active { border-left: 3px solid var(--accent-emerald) !important; background: rgba(16,185,129,0.04) !important; }
+    .status-pill { padding: 3px 10px; border-radius: 20px; font-size: 0.65rem; font-weight: 600; letter-spacing: 0.03em; display:inline-flex; align-items:center; gap:4px; }
+    .status-live { background: rgba(16,185,129,0.15); color: var(--accent-emerald); animation: pulse 1.5s infinite; }
+    .status-upcoming { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+    .status-expired { background: rgba(100,116,139,0.15); color: var(--text-muted); }
+    .status-done { background: rgba(59,130,246,0.12); color: var(--accent-blue); }
+    .timeline-item { transition: all 0.3s ease; border-radius: var(--radius-md); }
+    .timeline-item:hover { background: rgba(255,255,255,0.02); }
+  </style>
+</head>
+<body>
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <span class="brand-text">AttendAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;">
+        <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <!-- Upcoming Class Alert -->
+    <div class="hidden" id="upcomingAlert" style="margin-bottom:var(--space-lg);background:linear-gradient(135deg,rgba(59,130,246,0.12),rgba(139,92,246,0.12));border:1px solid rgba(59,130,246,0.3);border-radius:var(--radius-lg);padding:var(--space-lg);display:flex;align-items:center;justify-content:space-between;animation:fadeInDown 0.5s;">
+      <div style="display:flex;align-items:center;gap:var(--space-md);">
+        <div style="font-size:1.5rem;width:42px;height:42px;border-radius:12px;background:rgba(59,130,246,0.15);display:flex;align-items:center;justify-content:center;" id="alertIcon"><i class="fas fa-bell" style="color:var(--accent-blue);"></i></div>
+        <div>
+          <div style="font-weight:700;font-size:1.05rem;" id="alertTitle">Class starting soon</div>
+          <div style="font-size:0.85rem;color:var(--text-muted);" id="alertDetails"></div>
+        </div>
+      </div>
+      <a class="btn btn-primary" id="alertAction" href="attendance.html" style="display:flex;align-items:center;gap:6px;"><i class="fas fa-play"></i> Begin Session</a>
+    </div>
+
+    <div class="top-bar">
+      <div>
+        <h1 id="greeting">Good Morning</h1>
+        <p class="text-muted text-sm" id="dateDisplay"></p>
+      </div>
+      <div class="top-bar-actions">
+        <div class="avatar" id="userAvatar">T</div>
+      </div>
+    </div>
+
+    <!-- Inspirational Quote -->
+    <div id="quoteBar" style="margin-bottom:var(--space-lg);padding:16px 24px;border-radius:var(--radius-lg);background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(139,92,246,0.08));border:1px solid rgba(139,92,246,0.15);display:flex;align-items:center;gap:14px;animation:fadeInDown 0.6s ease;">
+      <i class="fas fa-quote-left" style="font-size:1.2rem;color:var(--accent-purple);opacity:0.6;"></i>
+      <div style="flex:1;">
+        <p id="quoteText" style="font-size:0.9rem;font-style:italic;color:var(--text-secondary);line-height:1.5;margin:0;"></p>
+        <p id="quoteAuthor" style="font-size:0.75rem;color:var(--text-muted);margin:4px 0 0 0;"></p>
+      </div>
+      <i class="fas fa-sparkles" style="font-size:0.9rem;color:var(--accent-amber);opacity:0.5;"></i>
+    </div>
+
+    <!-- Quick Stats -->
+    <div class="dashboard-grid" style="margin-bottom:var(--space-xl);">
+      <div class="stat-card animate-fadeInUp stagger-1">
+        <div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);"><i class="fas fa-chalkboard-teacher"></i></div>
+        <div class="stat-value" id="statClasses">0</div>
+        <div class="stat-label">Today's Lectures</div>
+      </div>
+      <div class="stat-card animate-fadeInUp stagger-2">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);"><i class="fas fa-user-graduate"></i></div>
+        <div class="stat-value" id="statStudents">0</div>
+        <div class="stat-label">Enrolled Students</div>
+      </div>
+      <div class="stat-card animate-fadeInUp stagger-3">
+        <div class="stat-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple);"><i class="fas fa-chart-line"></i></div>
+        <div class="stat-value" id="statAttendance">—</div>
+        <div class="stat-label">Avg Attendance</div>
+      </div>
+      <div class="stat-card animate-fadeInUp stagger-4">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-amber);"><i class="fas fa-tasks"></i></div>
+        <div class="stat-value" id="statAssignments">0</div>
+        <div class="stat-label">Active Tasks</div>
+      </div>
+    </div>
+
+    <!-- Two Column Layout -->
+    <div class="dashboard-grid-2">
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.4s;">
+        <div class="section-header">
+          <h2><i class="fas fa-clock" style="color:var(--accent-blue);margin-right:8px;font-size:0.9rem;"></i>Today's Lectures</h2>
+          <a href="timetable.html" class="btn btn-ghost btn-sm">View All</a>
+        </div>
+        <div class="timeline" id="todaySchedule">
+          <div class="empty-state" style="padding:var(--space-xl);">
+            <div style="font-size:2.5rem;margin-bottom:12px;"><i class="fas fa-calendar-check" style="color:var(--text-muted);opacity:0.4;"></i></div>
+            <h3>No lectures today</h3>
+            <p>Add classes in the Schedule section</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.5s;">
+        <div class="section-header"><h2><i class="fas fa-bolt" style="color:var(--accent-amber);margin-right:8px;font-size:0.9rem;"></i>Quick Actions</h2></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <a href="attendance.html" class="action-card" style="padding:var(--space-lg);background:rgba(59,130,246,0.08);border:1px solid rgba(59,130,246,0.2);border-radius:var(--radius-lg);text-align:center;transition:var(--transition-base);display:block;">
+            <div style="font-size:1.5rem;margin-bottom:var(--space-sm);"><i class="fas fa-video" style="color:var(--accent-blue);"></i></div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--accent-blue);">Start Session</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Live face recognition</div>
+          </a>
+          <a href="students.html" class="action-card" style="padding:var(--space-lg);background:rgba(16,185,129,0.08);border:1px solid rgba(16,185,129,0.2);border-radius:var(--radius-lg);text-align:center;transition:var(--transition-base);display:block;">
+            <div style="font-size:1.5rem;margin-bottom:var(--space-sm);"><i class="fas fa-user-plus" style="color:var(--accent-emerald);"></i></div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--accent-emerald);">Enroll Student</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Register & scan face</div>
+          </a>
+          <a href="timetable.html" class="action-card" style="padding:var(--space-lg);background:rgba(139,92,246,0.08);border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius-lg);text-align:center;transition:var(--transition-base);display:block;">
+            <div style="font-size:1.5rem;margin-bottom:var(--space-sm);"><i class="fas fa-calendar-alt" style="color:var(--accent-purple);"></i></div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--accent-purple);">Manage Schedule</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Create & edit lectures</div>
+          </a>
+          <a href="assignments.html" class="action-card" style="padding:var(--space-lg);background:rgba(245,158,11,0.08);border:1px solid rgba(245,158,11,0.2);border-radius:var(--radius-lg);text-align:center;transition:var(--transition-base);display:block;">
+            <div style="font-size:1.5rem;margin-bottom:var(--space-sm);"><i class="fas fa-file-upload" style="color:var(--accent-amber);"></i></div>
+            <div style="font-weight:600;font-size:0.9rem;color:var(--accent-amber);">New Assignment</div>
+            <div style="font-size:0.75rem;color:var(--text-muted);margin-top:4px;">Share with students</div>
+          </a>
+        </div>
+
+        <div style="margin-top:var(--space-xl);">
+          <h3 style="font-size:1rem;margin-bottom:var(--space-md);display:flex;align-items:center;gap:8px;"><i class="fas fa-history" style="color:var(--text-muted);font-size:0.85rem;"></i> Recent Sessions</h3>
+          <div id="recentSessions"><p class="text-muted text-sm">No sessions yet.</p></div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || !user.uid) { window.location.href = '../login.html?role=teacher'; }
+
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+    document.getElementById('greeting').textContent = `${greet}, ${user.name || 'Teacher'}`;
+    document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('userAvatar').textContent = (user.name||'T')[0].toUpperCase();
+
+    // Inspirational quotes rotation
+    const quotes = [
+      { text: "Education is the most powerful weapon which you can use to change the world.", author: "— Nelson Mandela" },
+      { text: "The beautiful thing about learning is that no one can take it away from you.", author: "— B.B. King" },
+      { text: "Teaching is the one profession that creates all other professions.", author: "— Unknown" },
+      { text: "The mind is not a vessel to be filled, but a fire to be kindled.", author: "— Plutarch" },
+      { text: "Every student can learn, just not on the same day or in the same way.", author: "— George Evans" },
+      { text: "The art of teaching is the art of assisting discovery.", author: "— Mark Van Doren" },
+      { text: "Technology will not replace great teachers, but technology in the hands of great teachers can be transformational.", author: "— George Couros" },
+      { text: "In learning you will teach, and in teaching you will learn.", author: "— Phil Collins" },
+      { text: "A good teacher can inspire hope, ignite imagination, and instill a love of learning.", author: "— Brad Henry" },
+      { text: "Intelligence plus character — that is the goal of true education.", author: "— Martin Luther King Jr." },
+    ];
+    const qi = new Date().getDate() % quotes.length;
+    document.getElementById('quoteText').textContent = quotes[qi].text;
+    document.getElementById('quoteAuthor').textContent = quotes[qi].author;
+
+    const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+    let allTodayClasses = [];
+    let completedSessionIds = new Set();
+
+    async function loadDashboard() {
+      try {
+        const sRes = await fetch(`${API}/students`, {headers});
+        const sData = await sRes.json();
+        if (sData.success) document.getElementById('statStudents').textContent = sData.students.length;
+
+        const tRes = await fetch(`${API}/timetable`, {headers});
+        const tData = await tRes.json();
+        if (tData.success) {
+          const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+          const today = days[new Date().getDay()];
+          allTodayClasses = tData.timetable.filter(t => t.day_of_week === today);
+          document.getElementById('statClasses').textContent = allTodayClasses.length;
+          if (allTodayClasses.length > 0) renderTodaySchedule(allTodayClasses);
+        }
+
+        const ssRes = await fetch(`${API}/attendance/sessions`, {headers});
+        const ssData = await ssRes.json();
+        if (ssData.success && ssData.sessions.length > 0) {
+          ssData.sessions.forEach(s => { if (s.status === 'completed') completedSessionIds.add(s.timetable_id); });
+          document.getElementById('recentSessions').innerHTML = ssData.sessions.slice(0,5).map(s => {
+            const isLocked = s.status === 'completed';
+            const ico = isLocked ? 'fa-lock' : s.status === 'active' ? 'fa-circle' : 'fa-clock';
+            const icoColor = isLocked ? 'var(--accent-blue)' : s.status === 'active' ? 'var(--accent-emerald)' : 'var(--text-muted)';
+            return `
+            <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-bottom:8px;${isLocked ? 'opacity:0.65;' : ''}transition:all 0.2s;">
+              <div style="display:flex;align-items:center;gap:10px;">
+                <i class="fas ${ico}" style="font-size:0.75rem;color:${icoColor};"></i>
+                <div>
+                  <div style="font-weight:600;font-size:0.85rem;">${s.subject || 'Session'}</div>
+                  <div style="font-size:0.7rem;color:var(--text-muted);">${s.section} · ${s.date} · ${s.total_present || 0}/${s.total_enrolled || 0}</div>
+                </div>
+              </div>
+              <span class="badge ${s.status==='active'?'badge-green':s.status==='completed'?'badge-blue':'badge-amber'}">${s.status}</span>
+            </div>`;
+          }).join('');
+
+          const completedSessions = ssData.sessions.filter(s => s.total_enrolled > 0);
+          if (completedSessions.length > 0) {
+            const avg = Math.round(completedSessions.reduce((sum, s) => sum + (s.total_present / s.total_enrolled * 100), 0) / completedSessions.length);
+            document.getElementById('statAttendance').textContent = avg + '%';
+          }
+        }
+
+        const aRes = await fetch(`${API}/assignments`, {headers});
+        const aData = await aRes.json();
+        if (aData.success) document.getElementById('statAssignments').textContent = aData.assignments.length;
+
+        checkUpcomingAlerts(allTodayClasses);
+      } catch(e) { console.error(e); }
+    }
+
+    function renderTodaySchedule(classes) {
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+
+      document.getElementById('todaySchedule').innerHTML = classes.map(c => {
+        const [h, m] = (c.start_time || '00:00').split(':').map(Number);
+        const classTime = h * 60 + m;
+        const endTime = classTime + (c.duration_min || 50);
+        const isNow = currentTime >= classTime && currentTime < endTime;
+        const isPast = currentTime >= endTime;
+        const isCompleted = completedSessionIds.has(c.id);
+
+        let statusHTML = '';
+        let rowClass = '';
+        let startLink = '';
+
+        if (isCompleted) {
+          statusHTML = '<span class="status-pill status-done"><i class="fas fa-check-circle"></i> Completed</span>';
+          rowClass = 'tl-locked';
+        } else if (isNow) {
+          statusHTML = '<span class="status-pill status-live"><i class="fas fa-circle" style="font-size:0.5rem;"></i> In Progress</span>';
+          rowClass = 'tl-active';
+          startLink = `<a href="attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&duration=${c.duration_min}&timetable_id=${c.id}" class="btn btn-primary btn-sm" style="font-size:0.75rem;display:flex;align-items:center;gap:4px;"><i class="fas fa-play"></i> Begin</a>`;
+        } else if (isPast) {
+          statusHTML = '<span class="status-pill status-expired"><i class="fas fa-lock"></i> Expired</span>';
+          rowClass = 'tl-expired';
+        } else {
+          statusHTML = '<span class="status-pill status-upcoming"><i class="fas fa-clock"></i> Scheduled</span>';
+          startLink = '';
+        }
+
+        return `
+          <div class="timeline-item ${rowClass}">
+            <div class="timeline-time">${c.start_time}</div>
+            <div class="timeline-content" style="display:flex;justify-content:space-between;align-items:center;">
+              <div>
+                <h4 style="display:flex;align-items:center;gap:8px;">${c.subject} ${statusHTML}</h4>
+                <p>Section ${c.section} ${c.room ? '· Room ' + c.room : ''} · ${c.duration_min} min</p>
+              </div>
+              ${startLink}
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function checkUpcomingAlerts(classes) {
+      if (!classes || classes.length === 0) return;
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+
+      for (const c of classes) {
+        const [h, m] = (c.start_time || '00:00').split(':').map(Number);
+        const classTime = h * 60 + m;
+        const endTime = classTime + (c.duration_min || 50);
+        const minutesUntil = classTime - currentTime;
+
+        if (completedSessionIds.has(c.id)) continue;
+
+        if (currentTime >= classTime && currentTime < endTime) {
+          const alert = document.getElementById('upcomingAlert');
+          alert.classList.remove('hidden');
+          alert.style.background = 'linear-gradient(135deg,rgba(16,185,129,0.12),rgba(59,130,246,0.12))';
+          alert.style.borderColor = 'rgba(16,185,129,0.4)';
+          document.getElementById('alertIcon').innerHTML = '<i class="fas fa-broadcast-tower" style="color:var(--accent-emerald);"></i>';
+          document.getElementById('alertTitle').textContent = `${c.subject} (${c.section}) is in progress`;
+          document.getElementById('alertDetails').textContent = `Started at ${c.start_time} · ${c.duration_min} min · Launch attendance now`;
+          document.getElementById('alertAction').href = `attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&duration=${c.duration_min}&timetable_id=${c.id}`;
+          return;
+        }
+
+        if (minutesUntil > 0 && minutesUntil <= 15) {
+          const alert = document.getElementById('upcomingAlert');
+          alert.classList.remove('hidden');
+          document.getElementById('alertTitle').textContent = `${c.subject} (${c.section}) begins in ${minutesUntil} min`;
+          document.getElementById('alertDetails').textContent = `${c.start_time} · ${c.duration_min} min · Prepare your session`;
+          document.getElementById('alertAction').href = `attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&duration=${c.duration_min}&timetable_id=${c.id}`;
+          return;
+        }
+      }
+    }
+
+    setInterval(() => checkUpcomingAlerts(allTodayClasses), 30000);
+    loadDashboard();
+
+    function logout() { localStorage.clear(); window.location.href = '../login.html?role=teacher'; }
+    function showToast(msg, type='info') {
+      const c = document.getElementById('toastContainer');
+      const t = document.createElement('div');
+      t.className = `toast ${type}`;
+      t.innerHTML = `<span><i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i></span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;
+      c.appendChild(t);
+      setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 4000);
+    }
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AI Assistant — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/lucide-static@latest/font/lucide.min.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .chat-container{display:flex;flex-direction:column;height:calc(100vh - 80px);background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);overflow:hidden;box-shadow:var(--shadow-lg)}
+    .chat-header{padding:14px var(--space-lg);border-bottom:1px solid var(--border-subtle);display:flex;align-items:center;justify-content:space-between;background:linear-gradient(135deg,rgba(99,102,241,0.08),rgba(59,130,246,0.06))}
+    .chat-header-left{display:flex;align-items:center;gap:var(--space-md)}
+    .ai-logo{width:40px;height:40px;border-radius:var(--radius-md);background:linear-gradient(135deg,#6366f1,#3b82f6);display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden}
+    .ai-logo::after{content:'';position:absolute;inset:0;background:linear-gradient(135deg,transparent 40%,rgba(255,255,255,0.15));pointer-events:none}
+    .ai-logo svg{width:22px;height:22px;stroke:#fff;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+    .chat-header-info h3{font-size:0.95rem;margin-bottom:1px;font-weight:700}
+    .chat-header-info p{font-size:0.72rem;color:var(--text-muted)}
+    .online-dot{width:8px;height:8px;border-radius:50%;background:#10b981;display:inline-block;margin-right:4px;animation:pulse 2s infinite}
+
+    .chat-messages{flex:1;overflow-y:auto;padding:var(--space-lg);display:flex;flex-direction:column;gap:14px;scroll-behavior:smooth}
+    .msg{max-width:78%;animation:msgIn 0.35s cubic-bezier(.4,0,.2,1)}
+    .msg-user{align-self:flex-end}
+    .msg-ai{align-self:flex-start}
+    .msg-bubble{padding:14px 18px;border-radius:18px;font-size:0.88rem;line-height:1.75;word-wrap:break-word}
+    .msg-user .msg-bubble{background:linear-gradient(135deg,#6366f1,#3b82f6);color:#fff;border-bottom-right-radius:4px;box-shadow:0 2px 12px rgba(99,102,241,0.25)}
+    .msg-ai .msg-bubble{background:var(--bg-glass);border:1px solid var(--border-subtle);color:var(--text-primary);border-bottom-left-radius:4px}
+    .msg-ai .msg-bubble strong{color:var(--accent-blue)}
+    .msg-ai .msg-bubble code{background:rgba(99,102,241,0.12);padding:1px 6px;border-radius:4px;font-family:'JetBrains Mono',monospace;font-size:0.82em}
+    .msg-ai .msg-bubble table{width:100%;border-collapse:collapse;margin:8px 0;font-size:0.82rem}
+    .msg-ai .msg-bubble th,.msg-ai .msg-bubble td{padding:6px 10px;border:1px solid var(--border-subtle);text-align:left}
+    .msg-ai .msg-bubble th{background:rgba(99,102,241,0.08);font-weight:600;font-size:0.75rem;text-transform:uppercase;letter-spacing:0.03em}
+    .msg-time{font-size:0.62rem;color:var(--text-muted);margin-top:3px;padding:0 6px;display:flex;align-items:center;gap:4px}
+    .msg-user .msg-time{justify-content:flex-end}
+
+    .chat-input-area{padding:12px var(--space-lg);border-top:1px solid var(--border-subtle);display:flex;gap:10px;align-items:flex-end;background:rgba(0,0,0,0.1)}
+    .chat-input{flex:1;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border-subtle);border-radius:14px;color:var(--text-primary);font-size:0.88rem;resize:none;outline:none;max-height:120px;line-height:1.5;font-family:var(--font-body);transition:var(--transition-base)}
+    .chat-input:focus{border-color:var(--accent-indigo);box-shadow:0 0 0 3px rgba(99,102,241,0.15)}
+    .chat-send{width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#3b82f6);border:none;color:#fff;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all 0.25s;flex-shrink:0}
+    .chat-send:hover{transform:scale(1.08);box-shadow:0 0 20px rgba(99,102,241,0.4)}
+    .chat-send:disabled{opacity:0.4;cursor:not-allowed;transform:none}
+    .chat-send svg{width:18px;height:18px;fill:none;stroke:#fff;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+
+    .quick-bar{display:flex;gap:6px;flex-wrap:wrap;padding:8px var(--space-lg);border-top:1px solid var(--border-subtle)}
+    .q-btn{padding:5px 13px;border-radius:20px;font-size:0.72rem;font-weight:500;border:1px solid var(--border-light);background:transparent;color:var(--text-secondary);cursor:pointer;transition:var(--transition-fast);white-space:nowrap;display:flex;align-items:center;gap:4px}
+    .q-btn:hover{border-color:var(--accent-indigo);color:var(--accent-indigo);background:rgba(99,102,241,0.06);transform:translateY(-1px)}
+
+    .welcome{text-align:center;padding:var(--space-2xl) var(--space-lg);color:var(--text-muted)}
+    .welcome-icon{width:72px;height:72px;margin:0 auto var(--space-md);border-radius:var(--radius-xl);background:linear-gradient(135deg,rgba(99,102,241,0.12),rgba(59,130,246,0.08));display:flex;align-items:center;justify-content:center;animation:float 4s ease-in-out infinite}
+    .welcome-icon svg{width:36px;height:36px;stroke:var(--accent-indigo);fill:none;stroke-width:1.5}
+    .welcome h3{font-size:1.15rem;color:var(--text-primary);margin-bottom:6px}
+    .welcome p{font-size:0.85rem;max-width:440px;margin:0 auto}
+    .suggest-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:var(--space-lg);max-width:480px;margin-left:auto;margin-right:auto}
+    .suggest-card{padding:12px 14px;background:rgba(99,102,241,0.04);border:1px solid rgba(99,102,241,0.12);border-radius:var(--radius-md);cursor:pointer;text-align:left;transition:all 0.2s;font-size:0.82rem;line-height:1.4;display:flex;align-items:flex-start;gap:8px}
+    .suggest-card:hover{background:rgba(99,102,241,0.1);border-color:rgba(99,102,241,0.25);transform:translateY(-2px);box-shadow:0 4px 12px rgba(0,0,0,0.15)}
+    .suggest-card .sc-icon{width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:0.9rem}
+
+    .typing{display:flex;gap:5px;align-items:center;padding:14px 18px}
+    .typing span{width:7px;height:7px;border-radius:50%;background:var(--text-muted);animation:bounce 1.4s infinite ease-in-out}
+    .typing span:nth-child(2){animation-delay:.2s}
+    .typing span:nth-child(3){animation-delay:.4s}
+
+    @keyframes msgIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+    @keyframes bounce{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+    @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+    @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item active" href="chatbot.html"><span class="nav-icon">💬</span> AI Assistant</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content" style="padding:var(--space-md) var(--space-lg);">
+    <div class="chat-container">
+      <div class="chat-header">
+        <div class="chat-header-left">
+          <div class="ai-logo"><svg viewBox="0 0 24 24"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 15H8a5 5 0 0 0-5 5v1h18v-1a5 5 0 0 0-5-5z"/><circle cx="12" cy="10" r="1"/></svg></div>
+          <div class="chat-header-info">
+            <h3>AttendAI Assistant</h3>
+            <p><span class="online-dot"></span>Online · Ask about students, classes, syllabus & more</p>
+          </div>
+        </div>
+        <button class="btn btn-ghost btn-sm" onclick="clearChat()" style="font-size:0.8rem;">New Chat</button>
+      </div>
+
+      <div class="chat-messages" id="chatMessages">
+        <div class="welcome" id="welcomeMsg">
+          <div class="welcome-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></div>
+          <h3>How can I help you today?</h3>
+          <p>I can answer questions about your students, timetable, attendance, assignments, or any academic topic.</p>
+          <div class="suggest-grid">
+            <div class="suggest-card" onclick="sendQuick('Show my complete timetable for this week')"><div class="sc-icon" style="background:rgba(59,130,246,0.1);color:var(--accent-blue);"><i class="fas fa-calendar-alt" style="font-size:1.1rem;"></i></div><div>Show my timetable for this week</div></div>
+            <div class="suggest-card" onclick="sendQuick('List all students with their attendance percentage')"><div class="sc-icon" style="background:rgba(16,185,129,0.1);color:var(--accent-emerald);">👥</div><div>Student attendance summary</div></div>
+            <div class="suggest-card" onclick="sendQuick('Which students have attendance below 75%?')"><div class="sc-icon" style="background:rgba(244,63,94,0.1);color:var(--accent-rose);">⚠️</div><div>Low attendance alerts</div></div>
+            <div class="suggest-card" onclick="sendQuick('Explain the concept of Object Oriented Programming')"><div class="sc-icon" style="background:rgba(139,92,246,0.1);color:var(--accent-purple);">📖</div><div>Explain a topic or concept</div></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="quick-bar">
+        <button class="q-btn" onclick="sendQuick('My timetable')"><i class="fas fa-calendar-alt" style="font-size:1.1rem;"></i> Timetable</button>
+        <button class="q-btn" onclick="sendQuick('List all students')">👥 Students</button>
+        <button class="q-btn" onclick="sendQuick('Recent attendance sessions')"><i class="fas fa-chart-line" style="font-size:1.1rem;"></i> Sessions</button>
+        <button class="q-btn" onclick="sendQuick('Assignment submission status')">📚 Assignments</button>
+        <button class="q-btn" onclick="sendQuick('Students below 75% attendance')">⚠️ Low Attendance</button>
+        <button class="q-btn" onclick="sendQuick('Suggest a lesson plan for today')">📖 Lesson Plan</button>
+      </div>
+
+      <div class="chat-input-area">
+        <textarea class="chat-input" id="chatInput" rows="1" placeholder="Ask anything — students, syllabus, topics..." onkeydown="if(event.key==='Enter'&&!event.shiftKey){event.preventDefault();sendMessage();}"></textarea>
+        <button class="chat-send" id="sendBtn" onclick="sendMessage()"><svg viewBox="0 0 24 24"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg></button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api',token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=teacher';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    let busy=false;
+    const input=document.getElementById('chatInput');
+    input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,120)+'px';});
+
+    async function loadHistory(){
+      try{const r=await fetch(`${API}/chatbot/history`,{headers});const d=await r.json();
+        if(d.success&&d.messages.length>0){document.getElementById('welcomeMsg')?.remove();d.messages.forEach(m=>addMsg(m.role==='user'?'user':'ai',m.content,m.created_at,false));scroll();}
+      }catch(e){console.error(e);}
+    }
+
+    function formatAI(text){
+      return text
+        .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+        .replace(/\*(.*?)\*/g,'<em>$1</em>')
+        .replace(/`(.*?)`/g,'<code>$1</code>')
+        .replace(/\n\n/g,'</p><p style="margin-top:8px;">')
+        .replace(/\n/g,'<br>');
+    }
+
+    function addMsg(role,content,time,animate=true){
+      const msgs=document.getElementById('chatMessages');
+      document.getElementById('welcomeMsg')?.remove();
+      const d=document.createElement('div');
+      d.className=`msg msg-${role}`;
+      if(!animate)d.style.animation='none';
+      const t=time?new Date(time).toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'}):new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+      const formatted=role==='ai'?formatAI(content):content.replace(/</g,'&lt;');
+      d.innerHTML=`<div class="msg-bubble">${role==='ai'?'<p>'+formatted+'</p>':formatted}</div><div class="msg-time">${role==='user'?'You':'AI Assistant'} · ${t}</div>`;
+      msgs.appendChild(d);
+    }
+
+    function showTyping(){
+      const msgs=document.getElementById('chatMessages');
+      const d=document.createElement('div');d.className='msg msg-ai';d.id='typingEl';
+      d.innerHTML='<div class="msg-bubble"><div class="typing"><span></span><span></span><span></span></div></div>';
+      msgs.appendChild(d);scroll();
+    }
+    function hideTyping(){document.getElementById('typingEl')?.remove();}
+    function scroll(){const m=document.getElementById('chatMessages');m.scrollTop=m.scrollHeight;}
+    function sendQuick(t){input.value=t;sendMessage();}
+
+    async function sendMessage(){
+      const text=input.value.trim();if(!text||busy)return;
+      addMsg('user',text);input.value='';input.style.height='auto';scroll();
+      busy=true;document.getElementById('sendBtn').disabled=true;showTyping();
+      try{
+        const r=await fetch(`${API}/chatbot/message`,{method:'POST',headers,body:JSON.stringify({message:text})});
+        const d=await r.json();hideTyping();
+        if(d.success)addMsg('ai',d.reply);
+        else addMsg('ai','Error: '+d.message);
+      }catch(e){hideTyping();addMsg('ai','Connection error. Please check the server.');}
+      busy=false;document.getElementById('sendBtn').disabled=false;scroll();
+    }
+
+    async function clearChat(){
+      try{await fetch(`${API}/chatbot/clear`,{method:'DELETE',headers});
+        document.getElementById('chatMessages').innerHTML=`<div class="welcome" id="welcomeMsg"><div class="welcome-icon"><svg viewBox="0 0 24 24"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z" stroke="var(--accent-indigo)" fill="none" stroke-width="1.5"/></svg></div><h3>New conversation started</h3><p>Ask me anything about your students, classes, or any academic topic.</p></div>`;
+      }catch(e){}
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=teacher';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className='toast '+t;e.innerHTML=`<span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+    loadHistory();input.focus();
+  </script>
+</body>
+</html>

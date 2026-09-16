@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/auth.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .profile-hero{display:flex;align-items:center;gap:var(--space-xl);padding:var(--space-2xl);background:linear-gradient(135deg,rgba(99,102,241,0.1),rgba(59,130,246,0.08),rgba(16,185,129,0.06));border:1px solid var(--border-subtle);border-radius:var(--radius-xl);margin-bottom:var(--space-xl);position:relative;overflow:hidden}
+    .profile-hero::before{content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;border-radius:50%;background:radial-gradient(circle,rgba(99,102,241,0.12),transparent);pointer-events:none}
+    .profile-avatar-wrap{position:relative;flex-shrink:0}
+    .profile-avatar{width:100px;height:100px;border-radius:50%;object-fit:cover;border:3px solid var(--accent-indigo);background:var(--bg-card);box-shadow:0 0 30px rgba(99,102,241,0.2)}
+    .profile-avatar-fallback{width:100px;height:100px;border-radius:50%;background:linear-gradient(135deg,#6366f1,#3b82f6);display:flex;align-items:center;justify-content:center;font-size:2.4rem;font-weight:700;color:#fff;border:3px solid rgba(255,255,255,0.2)}
+    .face-status-dot{position:absolute;bottom:4px;right:4px;width:22px;height:22px;border-radius:50%;border:3px solid var(--bg-primary);display:flex;align-items:center;justify-content:center;font-size:0.7rem}
+    .face-yes{background:var(--accent-emerald)}
+    .face-no{background:var(--accent-amber)}
+    .profile-info h2{font-size:1.4rem;margin-bottom:2px}
+    .profile-info .uid{font-size:0.85rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace;letter-spacing:0.03em}
+    .profile-badges{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
+    .p-badge{padding:3px 12px;border-radius:20px;font-size:0.72rem;font-weight:600;border:1px solid}
+    .p-badge-green{background:rgba(16,185,129,0.1);color:var(--accent-emerald);border-color:rgba(16,185,129,0.2)}
+    .p-badge-blue{background:rgba(59,130,246,0.1);color:var(--accent-blue);border-color:rgba(59,130,246,0.2)}
+    .p-badge-purple{background:rgba(139,92,246,0.1);color:var(--accent-purple);border-color:rgba(139,92,246,0.2)}
+
+    .detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:var(--space-lg);margin-bottom:var(--space-xl)}
+    .detail-card{background:var(--bg-card);border:1px solid var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-lg);transition:var(--transition-base)}
+    .detail-card:hover{border-color:rgba(99,102,241,0.2);box-shadow:0 4px 20px rgba(0,0,0,0.15)}
+    .detail-card h3{font-size:0.95rem;margin-bottom:var(--space-lg);display:flex;align-items:center;gap:8px}
+    .detail-card h3 .icon{width:32px;height:32px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:0.95rem}
+    .detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border-subtle)}
+    .detail-row:last-child{border-bottom:none}
+    .detail-label{font-size:0.82rem;color:var(--text-muted)}
+    .detail-value{font-size:0.88rem;font-weight:600;color:var(--text-primary)}
+
+    .face-zone{border:2px dashed var(--border-subtle);border-radius:var(--radius-lg);padding:var(--space-xl);text-align:center;transition:all 0.3s}
+    .face-zone.active{border-color:var(--accent-indigo);background:rgba(99,102,241,0.04)}
+    .face-frame{width:180px;height:180px;border-radius:50%;overflow:hidden;margin:0 auto var(--space-md);border:3px solid var(--border-subtle);position:relative;background:var(--bg-glass)}
+    .face-frame.capturing{border-color:var(--accent-emerald);box-shadow:0 0 25px rgba(16,185,129,0.2)}
+    .face-frame video{width:100%;height:100%;object-fit:cover}
+    .face-frame .placeholder{display:flex;align-items:center;justify-content:center;width:100%;height:100%;color:var(--text-muted)}
+    .face-frame .placeholder svg{width:48px;height:48px;stroke:var(--text-muted);fill:none;stroke-width:1.2}
+    .face-steps{display:flex;gap:6px;justify-content:center;margin:var(--space-md) 0}
+    .face-step{width:28px;height:28px;border-radius:50%;border:2px solid var(--border-light);display:flex;align-items:center;justify-content:center;font-size:0.7rem;font-weight:700;color:var(--text-muted);transition:all 0.3s}
+    .face-step.done{background:var(--accent-emerald);border-color:var(--accent-emerald);color:#fff}
+    .face-step.active{border-color:var(--accent-indigo);color:var(--accent-indigo)}
+
+    @keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Attendance</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item active" href="profile.html"><span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profile</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <!-- Profile Hero -->
+    <div class="profile-hero">
+      <div class="profile-avatar-wrap">
+        <img src="" id="profileAvatar" alt="Profile" class="profile-avatar" onerror="this.style.display='none';this.nextElementSibling.style.display='flex';">
+        <div class="profile-avatar-fallback" id="profileAvatarFallback" style="display:none;">S</div>
+        <div class="face-status-dot face-no" id="faceDot" title="Face not registered">✗</div>
+      </div>
+      <div class="profile-info">
+        <h2 id="profileName">—</h2>
+        <div class="uid" id="profileUid">UID: —</div>
+        <div class="profile-badges">
+          <span class="p-badge p-badge-blue" id="pDeptBadge">—</span>
+          <span class="p-badge p-badge-purple" id="pSemBadge">—</span>
+          <span class="p-badge p-badge-green" id="pSecBadge">—</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="detail-grid">
+      <!-- Personal Info -->
+      <div class="detail-card">
+        <h3><div class="icon" style="background:rgba(99,102,241,0.1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-indigo)" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></div> Personal Information</h3>
+        <div class="detail-row"><span class="detail-label">Full Name</span><span class="detail-value" id="dName">—</span></div>
+        <div class="detail-row"><span class="detail-label">Email</span><span class="detail-value" id="dEmail">—</span></div>
+        <div class="detail-row"><span class="detail-label">Section</span><span class="detail-value" id="dSection">—</span></div>
+        <div class="detail-row"><span class="detail-label">Semester</span><span class="detail-value" id="dSemester">—</span></div>
+        <div class="detail-row"><span class="detail-label">Department</span><span class="detail-value" id="dDept">—</span></div>
+        <div class="detail-row"><span class="detail-label">Face Recognition</span><span class="detail-value" id="dFace">—</span></div>
+      </div>
+
+      <!-- Change Password -->
+      <div class="detail-card">
+        <h3><div class="icon" style="background:rgba(244,63,94,0.1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-rose)" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg></div> Security</h3>
+        <form onsubmit="changePassword(event)" style="display:flex;flex-direction:column;gap:var(--space-md);">
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.82rem;">Current Password</label>
+            <input type="password" class="form-input" id="oldPw" required style="font-size:0.88rem;">
+          </div>
+          <div class="form-group">
+            <label class="form-label" style="font-size:0.82rem;">New Password</label>
+            <input type="password" class="form-input" id="newPw" required placeholder="Min 6 characters" style="font-size:0.88rem;">
+          </div>
+          <button type="submit" class="btn btn-primary w-full" style="margin-top:var(--space-sm);">Update Password</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Face Registration -->
+    <div class="detail-card" style="max-width:500px;">
+      <h3><div class="icon" style="background:rgba(16,185,129,0.1);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--accent-emerald)" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg></div> Face Registration</h3>
+      <div class="face-zone" id="faceZone">
+        <div class="face-frame" id="faceFrame">
+          <div class="placeholder" id="facePlaceholder">
+            <svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+          </div>
+          <video id="faceVideo" autoplay playsinline style="display:none;"></video>
+          <canvas id="faceCanvas" style="display:none;"></canvas>
+        </div>
+        <div class="face-steps" id="faceSteps">
+          <div class="face-step" id="fs1">1</div>
+          <div class="face-step" id="fs2">2</div>
+          <div class="face-step" id="fs3">3</div>
+        </div>
+        <p style="font-size:0.82rem;color:var(--text-muted);margin-bottom:var(--space-md);" id="faceStatus">Capture 3 angles for best accuracy</p>
+        <div style="display:flex;gap:8px;justify-content:center;">
+          <button class="btn btn-primary btn-sm" id="startCamBtn" onclick="startCam()">Start Camera</button>
+          <button class="btn btn-sm hidden" id="captureBtn" onclick="capture()" style="background:var(--accent-emerald);color:#fff;border:none;">Capture (<span id="capCount">0</span>/3)</button>
+        </div>
+        <button class="btn btn-primary btn-sm hidden w-full" id="saveBtn" onclick="saveFace()" style="margin-top:var(--space-sm);">Save Face Data</button>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');const user=JSON.parse(localStorage.getItem('user')||'{}');
+    if(!token)window.location.href='../login.html?role=student';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    let stream=null;let faceImages=[];
+
+    async function loadProfile(){
+      try{const r=await fetch(`${API}/students/${user.uid}`,{headers});const d=await r.json();
+      if(d.success){const s=d.student;
+        document.getElementById('profileName').textContent=s.name;
+        document.getElementById('profileUid').textContent=`UID: ${s.uid}`;
+        document.getElementById('profileAvatar').src=`${API}/profile/photo/${s.uid}`;
+        document.getElementById('profileAvatarFallback').textContent=s.name[0].toUpperCase();
+        
+        // Face dot
+        const dot=document.getElementById('faceDot');
+        if(s.face_registered){dot.className='face-status-dot face-yes';dot.textContent='✓';dot.title='Face registered';}
+        else{dot.className='face-status-dot face-no';dot.textContent='✗';dot.title='Not registered';}
+        
+        // Badges
+        document.getElementById('pDeptBadge').textContent=s.department||'No Dept';
+        document.getElementById('pSemBadge').textContent=`Sem ${s.semester||'—'}`;
+        document.getElementById('pSecBadge').textContent=`Section ${s.section||'—'}`;
+        
+        // Detail rows
+        document.getElementById('dName').textContent=s.name;
+        document.getElementById('dEmail').textContent=s.email||'—';
+        document.getElementById('dSection').textContent=s.section||'—';
+        document.getElementById('dSemester').textContent=s.semester||'—';
+        document.getElementById('dDept').textContent=s.department||'—';
+        document.getElementById('dFace').innerHTML=s.face_registered
+          ?'<span style="color:var(--accent-emerald);">✓ Registered</span>'
+          :'<span style="color:var(--accent-amber);">✗ Not Registered</span>';
+      }}catch(e){console.error(e);}
+    }
+
+    async function changePassword(e){
+      e.preventDefault();
+      try{
+        const r=await fetch(`${API}/auth/change-password`,{method:'POST',headers,body:JSON.stringify({
+          old_password:document.getElementById('oldPw').value,
+          new_password:document.getElementById('newPw').value
+        })});
+        const d=await r.json();
+        if(d.success){showToast('Password updated successfully!','success');document.getElementById('oldPw').value='';document.getElementById('newPw').value='';}
+        else showToast(d.message,'error');
+      }catch(e){showToast('Server error','error');}
+    }
+
+    async function startCam(){
+      try{
+        stream=await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});
+        const v=document.getElementById('faceVideo');v.srcObject=stream;v.style.display='block';
+        document.getElementById('faceFrame').classList.add('capturing');
+        document.getElementById('facePlaceholder').style.display='none';
+        document.getElementById('faceZone').classList.add('active');
+        document.getElementById('startCamBtn').classList.add('hidden');
+        document.getElementById('captureBtn').classList.remove('hidden');
+        document.getElementById('faceStatus').textContent='Look straight ahead and click Capture';
+        document.getElementById('fs1').classList.add('active');
+        faceImages=[];document.getElementById('capCount').textContent='0';
+      }catch(e){showToast('Camera access denied','error');}
+    }
+
+    function capture(){
+      const v=document.getElementById('faceVideo');const c=document.getElementById('faceCanvas');
+      c.width=v.videoWidth;c.height=v.videoHeight;c.getContext('2d').drawImage(v,0,0);
+      faceImages.push(c.toDataURL('image/jpeg',0.9));
+      document.getElementById('capCount').textContent=faceImages.length;
+      
+      // Update step indicators
+      for(let i=1;i<=3;i++){
+        const el=document.getElementById(`fs${i}`);
+        el.classList.remove('active','done');
+        if(i<=faceImages.length)el.classList.add('done');
+        else if(i===faceImages.length+1)el.classList.add('active');
+      }
+      
+      const msgs=['Now turn slightly LEFT','Now turn slightly RIGHT','All captured! Save now.'];
+      document.getElementById('faceStatus').textContent=msgs[Math.min(faceImages.length-1,2)];
+      if(faceImages.length>=3){
+        document.getElementById('captureBtn').classList.add('hidden');
+        document.getElementById('saveBtn').classList.remove('hidden');
+      }
+    }
+
+    async function saveFace(){
+      document.getElementById('saveBtn').disabled=true;document.getElementById('saveBtn').textContent='Saving...';
+      try{
+        const r=await fetch(`${API}/auth/face-register`,{method:'POST',headers,body:JSON.stringify({uid:user.uid,role:'student',images:faceImages})});
+        const d=await r.json();
+        if(d.success){showToast('Face registered successfully!','success');stopCam();loadProfile();}
+        else showToast(d.message,'error');
+      }catch(e){showToast('Error saving face','error');}
+      document.getElementById('saveBtn').disabled=false;document.getElementById('saveBtn').textContent='Save Face Data';
+    }
+
+    function stopCam(){
+      if(stream){stream.getTracks().forEach(t=>t.stop());stream=null;}
+      const v=document.getElementById('faceVideo');if(v){v.style.display='none';v.srcObject=null;}
+      document.getElementById('faceFrame').classList.remove('capturing');
+      document.getElementById('facePlaceholder').style.display='';
+      document.getElementById('faceZone').classList.remove('active');
+      document.getElementById('startCamBtn').classList.remove('hidden');
+      document.getElementById('captureBtn').classList.add('hidden');
+      document.getElementById('saveBtn').classList.add('hidden');
+      for(let i=1;i<=3;i++)document.getElementById(`fs${i}`).classList.remove('active','done');
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=student';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+    loadProfile();
+  </script>
+</body>
+</html>

@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Schedule — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .class-card { display:flex; align-items:center; justify-content:space-between; padding:16px 20px; border:1px solid var(--border-subtle); border-radius:var(--radius-lg); border-left:4px solid var(--accent-blue); transition:all 0.3s ease; position:relative; overflow:hidden; }
+    .class-card:hover { transform:translateX(4px); box-shadow:var(--shadow-sm); border-color:var(--border-light); }
+    .class-card::before { content:''; position:absolute; top:0; left:0; right:0; bottom:0; background:linear-gradient(90deg,rgba(255,255,255,0.02),transparent); pointer-events:none; }
+    .class-card.is-live { border-left-color:var(--accent-emerald); background:rgba(16,185,129,0.03); }
+    .class-card.is-locked { opacity:0.45; pointer-events:none; }
+    .class-card.is-expired { opacity:0.5; }
+    .class-card.is-expired .start-btn { display:none !important; }
+    .day-badge { padding:3px 10px; border-radius:20px; font-size:0.65rem; font-weight:600; letter-spacing:0.04em; text-transform:capitalize; }
+    .day-mon { background:rgba(59,130,246,0.12); color:var(--accent-blue); }
+    .day-tue { background:rgba(16,185,129,0.12); color:var(--accent-emerald); }
+    .day-wed { background:rgba(139,92,246,0.12); color:var(--accent-purple); }
+    .day-thu { background:rgba(245,158,11,0.12); color:var(--accent-amber); }
+    .day-fri { background:rgba(59,130,246,0.12); color:var(--accent-blue); }
+    .day-sat { background:rgba(244,63,94,0.12); color:var(--accent-rose); }
+    .status-pill { padding:3px 10px; border-radius:20px; font-size:0.6rem; font-weight:600; letter-spacing:0.03em; display:inline-flex; align-items:center; gap:4px; }
+    .status-live { background:rgba(16,185,129,0.15); color:var(--accent-emerald); animation:pulse 1.5s infinite; }
+    .status-upcoming { background:rgba(59,130,246,0.1); color:var(--accent-blue); }
+    .status-expired { background:rgba(100,116,139,0.12); color:var(--text-muted); }
+    .status-done { background:rgba(59,130,246,0.1); color:var(--accent-blue); }
+    .start-btn { display:flex; align-items:center; gap:5px; padding:8px 16px; border-radius:var(--radius-md); font-size:0.8rem; font-weight:600; text-decoration:none; transition:all 0.2s; background:linear-gradient(135deg,var(--accent-emerald),#059669); color:#fff; border:none; cursor:pointer; }
+    .start-btn:hover { transform:translateY(-2px); box-shadow:0 4px 12px rgba(16,185,129,0.3); }
+    .delete-btn { width:36px; height:36px; border-radius:var(--radius-md); display:flex; align-items:center; justify-content:center; border:1px solid rgba(244,63,94,0.2); background:rgba(244,63,94,0.08); color:var(--accent-rose); cursor:pointer; transition:all 0.2s; font-size:0.8rem; }
+    .delete-btn:hover { background:rgba(244,63,94,0.15); transform:scale(1.05); }
+    .tab-btn { border:none; background:transparent; color:var(--text-muted); padding:8px 16px; font-size:0.85rem; font-weight:500; cursor:pointer; border-bottom:2px solid transparent; transition:all 0.2s; }
+    .tab-btn.active { color:var(--accent-blue); border-bottom-color:var(--accent-blue); }
+    .tab-btn:hover { color:var(--text-primary); }
+    @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.5;} }
+    @keyframes slideIn { from{opacity:0;transform:translateY(8px);} to{opacity:1;transform:translateY(0);} }
+  </style>
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;">
+        <i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i>
+      </div>
+      <span class="brand-text">AttendAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item active" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div>
+        <h1 style="display:flex;align-items:center;gap:10px;"><i class="fas fa-calendar-alt" style="color:var(--accent-blue);font-size:1.3rem;"></i> Class Schedule</h1>
+        <p class="text-muted text-sm">Manage your weekly lectures and attendance sessions</p>
+      </div>
+      <button class="btn btn-primary" onclick="showAddModal()" style="display:flex;align-items:center;gap:6px;"><i class="fas fa-plus"></i> New Lecture</button>
+    </div>
+
+    <div class="glass-card">
+      <div class="tabs" style="display:flex;gap:4px;border-bottom:1px solid var(--border-subtle);padding-bottom:0;margin-bottom:var(--space-lg);">
+        <button class="tab-btn active" onclick="filterDay('all',this)">All</button>
+        <button class="tab-btn" onclick="filterDay('monday',this)">Mon</button>
+        <button class="tab-btn" onclick="filterDay('tuesday',this)">Tue</button>
+        <button class="tab-btn" onclick="filterDay('wednesday',this)">Wed</button>
+        <button class="tab-btn" onclick="filterDay('thursday',this)">Thu</button>
+        <button class="tab-btn" onclick="filterDay('friday',this)">Fri</button>
+        <button class="tab-btn" onclick="filterDay('saturday',this)">Sat</button>
+      </div>
+      <div id="classList">
+        <div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px;"><i class="fas fa-calendar-plus" style="color:var(--text-muted);opacity:0.4;"></i></div><h3>No lectures added</h3><p>Click "New Lecture" to build your schedule</p></div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Class Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-content">
+      <div class="modal-header"><h3 style="display:flex;align-items:center;gap:8px;"><i class="fas fa-plus-circle" style="color:var(--accent-blue);"></i> Add Lecture</h3><button class="modal-close" onclick="closeModal()">×</button></div>
+      <form onsubmit="addClass(event)" style="display:flex;flex-direction:column;gap:var(--space-md);">
+        <div class="form-group"><label class="form-label">Subject *</label><input class="form-input" id="addSubject" required placeholder="e.g. Data Structures"></div>
+        <div class="form-group"><label class="form-label">Section *</label><input class="form-input" id="addSection" required placeholder="e.g. CSE-A"></div>
+        <div class="form-group"><label class="form-label">Day *</label>
+          <select class="form-input form-select" id="addDay" required>
+            <option value="monday">Monday</option><option value="tuesday">Tuesday</option><option value="wednesday">Wednesday</option>
+            <option value="thursday">Thursday</option><option value="friday">Friday</option><option value="saturday">Saturday</option>
+          </select>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">Start Time *</label><input type="time" class="form-input" id="addStart" required></div>
+          <div class="form-group"><label class="form-label">End Time *</label><input type="time" class="form-input" id="addEnd" required></div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">Duration (min)</label><input type="number" class="form-input" id="addDuration" value="50"></div>
+          <div class="form-group"><label class="form-label">Room</label><input class="form-input" id="addRoom" placeholder="e.g. Room 101"></div>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-full" style="display:flex;align-items:center;justify-content:center;gap:6px;"><i class="fas fa-check"></i> Add Lecture</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '../login.html?role=teacher';
+    const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+    let allClasses = [];
+    let currentDay = 'all';
+    let completedTimetableIds = new Set();
+
+    async function loadTimetable() {
+      try {
+        const res = await fetch(`${API}/timetable`, {headers});
+        const data = await res.json();
+        if (data.success) { allClasses = data.timetable; }
+
+        // Load sessions to find completed ones
+        const ssRes = await fetch(`${API}/attendance/sessions`, {headers});
+        const ssData = await ssRes.json();
+        if (ssData.success) {
+          const today = new Date().toISOString().split('T')[0];
+          ssData.sessions.forEach(s => {
+            if (s.status === 'completed' && s.date === today) completedTimetableIds.add(s.timetable_id);
+          });
+        }
+
+        renderClasses();
+      } catch(e) { console.error(e); }
+    }
+
+    function renderClasses() {
+      const filtered = currentDay === 'all' ? allClasses : allClasses.filter(c => c.day_of_week === currentDay);
+      if (filtered.length === 0) {
+        document.getElementById('classList').innerHTML = '<div class="empty-state"><div style="font-size:2.5rem;margin-bottom:12px;"><i class="fas fa-calendar-times" style="color:var(--text-muted);opacity:0.4;"></i></div><h3>No lectures found</h3></div>';
+        return;
+      }
+
+      const days = ['sunday','monday','tuesday','wednesday','thursday','friday','saturday'];
+      const todayName = days[new Date().getDay()];
+      const now = new Date();
+      const currentTime = now.getHours() * 60 + now.getMinutes();
+      const dayAbbr = {monday:'mon',tuesday:'tue',wednesday:'wed',thursday:'thu',friday:'fri',saturday:'sat'};
+
+      document.getElementById('classList').innerHTML = `<div style="display:grid;gap:12px;">${filtered.map((c, i) => {
+        const isToday = c.day_of_week === todayName;
+        const [sh, sm] = (c.start_time || '00:00').split(':').map(Number);
+        const classStart = sh * 60 + sm;
+        const classEnd = classStart + (c.duration_min || 50);
+        const isLive = isToday && currentTime >= classStart && currentTime < classEnd;
+        const isExpired = isToday && currentTime >= classEnd;
+        const isCompleted = completedTimetableIds.has(c.id);
+
+        let cardClass = '';
+        let statusHTML = '';
+        let actionsHTML = '';
+
+        if (isCompleted) {
+          cardClass = 'is-locked';
+          statusHTML = '<span class="status-pill status-done"><i class="fas fa-check-circle"></i> Completed</span>';
+        } else if (isLive) {
+          cardClass = 'is-live';
+          statusHTML = '<span class="status-pill status-live"><i class="fas fa-circle" style="font-size:0.4rem;"></i> In Progress</span>';
+          actionsHTML = `<a href="attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&timetable_id=${c.id}&duration=${c.duration_min}" class="start-btn"><i class="fas fa-play"></i> Begin</a>`;
+        } else if (isExpired) {
+          cardClass = 'is-expired';
+          statusHTML = '<span class="status-pill status-expired"><i class="fas fa-lock"></i> Expired</span>';
+        } else if (isToday) {
+          statusHTML = '<span class="status-pill status-upcoming"><i class="fas fa-clock"></i> Today</span>';
+          actionsHTML = `<a href="attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&timetable_id=${c.id}&duration=${c.duration_min}" class="start-btn"><i class="fas fa-play"></i> Start</a>`;
+        } else {
+          actionsHTML = `<a href="attendance.html?subject=${encodeURIComponent(c.subject)}&section=${encodeURIComponent(c.section)}&timetable_id=${c.id}&duration=${c.duration_min}" class="start-btn" style="background:linear-gradient(135deg,var(--accent-blue),#4f46e5);"><i class="fas fa-play"></i> Start</a>`;
+        }
+
+        const da = dayAbbr[c.day_of_week] || 'mon';
+        const borderColor = isLive ? 'var(--accent-emerald)' : isExpired ? 'var(--text-muted)' : `var(--accent-${da === 'thu' ? 'amber' : da === 'wed' ? 'purple' : da === 'sat' ? 'rose' : da === 'tue' ? 'emerald' : 'blue'})`;
+
+        return `<div class="class-card ${cardClass}" style="animation:slideIn 0.3s ease ${i*0.05}s both;border-left-color:${borderColor};">
+          <div>
+            <div style="font-weight:700;font-size:1rem;margin-bottom:4px;display:flex;align-items:center;gap:8px;">${c.subject} ${statusHTML}</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);display:flex;align-items:center;gap:8px;flex-wrap:wrap;">
+              <span class="day-badge day-${da}">${c.day_of_week}</span>
+              <span><i class="fas fa-clock" style="font-size:0.65rem;margin-right:3px;"></i>${c.start_time} — ${c.end_time}</span>
+              <span><i class="fas fa-users" style="font-size:0.65rem;margin-right:3px;"></i>Section ${c.section}</span>
+              ${c.room ? `<span><i class="fas fa-door-open" style="font-size:0.65rem;margin-right:3px;"></i>${c.room}</span>` : ''}
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;">
+            ${actionsHTML}
+            <button class="delete-btn" onclick="deleteClass('${c.id}')" title="Remove lecture"><i class="fas fa-trash-alt"></i></button>
+          </div>
+        </div>`;
+      }).join('')}</div>`;
+    }
+
+    function filterDay(day, btn) {
+      currentDay = day;
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      renderClasses();
+    }
+
+    function showAddModal() { document.getElementById('addModal').classList.add('active'); }
+    function closeModal() { document.getElementById('addModal').classList.remove('active'); }
+
+    async function addClass(e) {
+      e.preventDefault();
+      try {
+        const res = await fetch(`${API}/timetable`, {method:'POST', headers, body: JSON.stringify({
+          subject: document.getElementById('addSubject').value, section: document.getElementById('addSection').value,
+          day_of_week: document.getElementById('addDay').value, start_time: document.getElementById('addStart').value,
+          end_time: document.getElementById('addEnd').value, duration_min: parseInt(document.getElementById('addDuration').value) || 50,
+          room: document.getElementById('addRoom').value
+        })});
+        const data = await res.json();
+        if (data.success) { showToast('Lecture added successfully','success'); closeModal(); loadTimetable(); }
+        else showToast(data.message,'error');
+      } catch(e) { showToast('Server error','error'); }
+    }
+
+    async function deleteClass(id) {
+      if (!confirm('Remove this lecture from your schedule?')) return;
+      await fetch(`${API}/timetable/${id}`, {method:'DELETE', headers});
+      showToast('Lecture removed','success'); loadTimetable();
+    }
+
+    function logout() { localStorage.clear(); window.location.href='../login.html?role=teacher'; }
+    function showToast(msg,type='info'){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span><i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i></span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},4000);}
+
+    loadTimetable();
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

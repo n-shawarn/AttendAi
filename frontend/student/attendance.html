@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>My Attendance — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item active" href="attendance.html"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Attendance</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="profile.html"><span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profile</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar"><h1>📅 My Attendance</h1></div>
+    <div class="glass-card">
+      <table class="data-table">
+        <thead><tr><th>Date</th><th>Subject</th><th>Section</th><th>Duration</th><th>Present</th><th>%</th><th>Status</th></tr></thead>
+        <tbody id="attendanceBody"><tr><td colspan="7" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');const user=JSON.parse(localStorage.getItem('user')||'{}');
+    if(!token)window.location.href='../login.html?role=student';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    async function load(){
+      try{const r=await fetch(`${API}/attendance/student/${user.uid}`,{headers});const d=await r.json();
+      if(d.success&&d.records.length>0){
+        document.getElementById('attendanceBody').innerHTML=d.records.map(r=>`<tr>
+          <td>${r.date}</td><td>${r.subject||'—'}</td><td><span class="badge badge-blue">${r.section||'—'}</span></td>
+          <td>${r.class_duration_min||0} min</td><td>${r.present_duration_min||0} min</td>
+          <td>${Math.round(r.presence_percentage||0)}%</td>
+          <td><span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status}</span></td>
+        </tr>`).join('');
+      }else{document.getElementById('attendanceBody').innerHTML='<tr><td colspan="7" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">No attendance records yet</td></tr>';}}catch(e){console.error(e);}
+    }
+    function logout(){localStorage.clear();window.location.href='../login.html?role=student';}
+    load();
+  </script>
+</body>
+</html>

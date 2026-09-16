@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Live Attendance — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    .countdown-timer {
+      font-size: 2rem; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+      color: var(--accent-emerald); text-align: center;
+      padding: var(--space-md); background: rgba(16,185,129,0.08);
+      border-radius: var(--radius-lg); border: 1px solid rgba(16,185,129,0.2);
+    }
+    .countdown-timer.warning { color: var(--accent-amber); background: rgba(245,158,11,0.08); border-color: rgba(245,158,11,0.2); }
+    .countdown-timer.critical { color: var(--accent-rose); background: rgba(244,63,94,0.08); border-color: rgba(244,63,94,0.2); animation: pulse 1s infinite; }
+    @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.6; } }
+    .roster-item { display: flex; align-items: center; gap: var(--space-md); padding: 10px var(--space-md); border-bottom: 1px solid var(--border-subtle); transition: background 0.2s; }
+    .roster-item:hover { background: rgba(255,255,255,0.03); }
+    .roster-item .student-info { flex: 1; }
+    .roster-item .student-name { font-weight: 600; font-size: 0.9rem; }
+    .roster-item .student-uid { font-size: 0.75rem; color: var(--text-muted); }
+    .roster-item .presence-badge { font-size: 0.75rem; padding: 2px 8px; border-radius: 10px; font-weight: 600; }
+    .presence-high { background: rgba(16,185,129,0.15); color: var(--accent-emerald); }
+    .presence-low { background: rgba(244,63,94,0.15); color: var(--accent-rose); }
+    .presence-mid { background: rgba(245,158,11,0.15); color: var(--accent-amber); }
+    .override-btns { display: flex; gap: 4px; }
+    .override-btns button { padding: 3px 8px; font-size: 0.7rem; border-radius: 6px; cursor: pointer; border: none; font-weight: 600; transition: all 0.2s; }
+    .btn-mark-present { background: rgba(16,185,129,0.2); color: var(--accent-emerald); }
+    .btn-mark-present:hover { background: rgba(16,185,129,0.4); }
+    .btn-mark-absent { background: rgba(244,63,94,0.2); color: var(--accent-rose); }
+    .btn-mark-absent:hover { background: rgba(244,63,94,0.4); }
+    .auto-stop-banner { background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(244,63,94,0.15)); border: 1px solid rgba(245,158,11,0.3); border-radius: var(--radius-lg); padding: var(--space-lg); text-align: center; animation: fadeIn 0.5s; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(-10px); } to { opacity: 1; transform: translateY(0); } }
+    .enrolled-section { margin-top: var(--space-md); border-top: 1px solid var(--border-subtle); padding-top: var(--space-md); }
+    .enrolled-section h4 { font-size: 0.8rem; color: var(--text-muted); margin-bottom: var(--space-sm); text-transform: uppercase; letter-spacing: 0.05em; }
+    .video-container { position: relative; border-radius: var(--radius-lg); overflow: hidden; background: #000; aspect-ratio: 4/3; }
+    .video-container video { width: 100%; height: 100%; object-fit: cover; }
+    .video-overlay { position: absolute; top: 10px; left: 10px; right: 10px; display: flex; justify-content: space-between; align-items: flex-start; }
+    .live-badge { display: flex; align-items: center; gap: 6px; background: rgba(244,63,94,0.9); color: #fff; padding: 4px 12px; border-radius: 20px; font-size: 0.75rem; font-weight: 700; }
+    .live-dot { width: 8px; height: 8px; border-radius: 50%; background: #fff; animation: pulse 1s infinite; }
+  </style>
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item active" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div>
+        <h1>📸 Live Attendance</h1>
+        <p class="text-muted text-sm" id="sessionInfo">Not started</p>
+      </div>
+      <div class="top-bar-actions">
+        <button class="btn btn-success" id="startBtn" onclick="startSession()">▶ Start Session</button>
+        <button class="btn btn-danger hidden" id="stopBtn" onclick="stopSession()">⏹ End Session</button>
+      </div>
+    </div>
+
+    <!-- Session Setup -->
+    <div class="glass-card" id="setupPanel" style="margin-bottom:var(--space-xl);">
+      <h2 style="margin-bottom:var(--space-lg);">Session Setup</h2>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
+        <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="sesSubject" placeholder="Mathematics"></div>
+        <div class="form-group"><label class="form-label">Section</label><input class="form-input" id="sesSection" placeholder="CSE-A"></div>
+        <div class="form-group"><label class="form-label">Duration (min)</label><input type="number" class="form-input" id="sesDuration" value="50" min="1" max="180"></div>
+      </div>
+      <p class="text-muted text-sm" style="margin-top:var(--space-md);">Session will auto-stop after the set duration. Students must be present for ≥75% of the time to be marked present.</p>
+    </div>
+
+    <!-- Live View -->
+    <div class="hidden" id="livePanel">
+      <!-- Auto-stop banner -->
+      <div class="hidden auto-stop-banner" id="autoStopBanner">
+        <h3 style="margin-bottom:var(--space-sm);">⏰ Session Completed</h3>
+        <p id="autoStopMessage">Attendance has been calculated and saved automatically.</p>
+        <button class="btn btn-primary" onclick="window.location.href='reports.html'" style="margin-top:var(--space-md);">📈 View Report</button>
+      </div>
+
+      <div class="dashboard-grid-2" id="liveContent">
+        <!-- Video Feed -->
+        <div>
+          <div class="video-container" id="videoContainer">
+            <video id="liveVideo" autoplay playsinline></video>
+            <canvas id="overlayCanvas" style="position:absolute;top:0;left:0;width:100%;height:100%;"></canvas>
+            <div class="video-overlay">
+              <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+              <span style="font-size:0.8rem;color:#fff;background:rgba(0,0,0,0.5);padding:2px 8px;border-radius:10px;" id="fpsDisplay">0 FPS</span>
+            </div>
+          </div>
+
+          <!-- Stats row -->
+          <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:var(--space-md);margin-top:var(--space-md);">
+            <div class="stat-card" style="padding:var(--space-md);text-align:center;">
+              <div class="countdown-timer" id="countdownDisplay">--:--</div>
+              <div class="stat-label" style="margin-top:4px;">Time Remaining</div>
+            </div>
+            <div class="stat-card" style="padding:var(--space-md);text-align:center;">
+              <div class="stat-value" style="font-size:1.5rem;color:var(--accent-emerald);" id="livePresent">0</div>
+              <div class="stat-label">Present (≥75%)</div>
+            </div>
+            <div class="stat-card" style="padding:var(--space-md);text-align:center;">
+              <div class="stat-value" style="font-size:1.5rem;color:var(--accent-rose);" id="liveFaces">0</div>
+              <div class="stat-label">Faces Now</div>
+            </div>
+            <div class="stat-card" style="padding:var(--space-md);text-align:center;">
+              <div class="stat-value" style="font-size:1.5rem;" id="liveElapsed">00:00</div>
+              <div class="stat-label">Elapsed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Roster Panel -->
+        <div class="roster-panel" style="background:var(--surface-secondary);border-radius:var(--radius-lg);border:1px solid var(--border-subtle);overflow:hidden;">
+          <div style="padding:var(--space-md);border-bottom:1px solid var(--border-subtle);display:flex;justify-content:space-between;align-items:center;">
+            <h3 style="font-size:1rem;">Student Roster</h3>
+            <span class="badge badge-green" id="rosterCount">0 detected</span>
+          </div>
+          <div id="rosterList" style="max-height:500px;overflow-y:auto;padding:0;">
+            <div class="empty-state" style="padding:var(--space-xl);"><div class="empty-icon">👤</div><h3>Waiting for faces...</h3><p>Students will appear as they're detected</p></div>
+          </div>
+
+          <!-- Enrolled but not detected -->
+          <div class="enrolled-section" id="enrolledSection" style="padding:var(--space-md);display:none;">
+            <h4>Not Yet Detected</h4>
+            <div id="enrolledList"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    if (!token) window.location.href = '../login.html?role=teacher';
+    const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+
+    let socket = null;
+    let videoStream = null;
+    let sessionId = null;
+    let frameInterval = null;
+    let startTime = null;
+    let elapsedInterval = null;
+    let countdownInterval = null;
+    let durationMin = 50;
+    let scheduledEnd = null;
+    let detectedStudents = {};
+    let enrolledStudents = [];
+    let sessionStopped = false;
+
+    // Read URL params (from timetable)
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('subject')) document.getElementById('sesSubject').value = params.get('subject');
+    if (params.get('section')) document.getElementById('sesSection').value = params.get('section');
+    if (params.get('duration')) document.getElementById('sesDuration').value = params.get('duration');
+
+    // Load enrolled students for section
+    async function loadEnrolledStudents(section) {
+      try {
+        const res = await fetch(`${API}/students?section=${section}`, {headers});
+        const data = await res.json();
+        if (data.success) {
+          enrolledStudents = data.students || [];
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function startSession() {
+      const subject = document.getElementById('sesSubject').value.trim();
+      const section = document.getElementById('sesSection').value.trim();
+      durationMin = parseInt(document.getElementById('sesDuration').value) || 50;
+
+      if (!subject || !section) { showToast('Subject and Section required', 'error'); return; }
+
+      // Load enrolled students
+      await loadEnrolledStudents(section);
+
+      // Start session on server
+      try {
+        const res = await fetch(`${API}/attendance/start`, {method:'POST', headers, body: JSON.stringify({
+          subject, section, duration_min: durationMin, timetable_id: params.get('timetable_id') || ''
+        })});
+        const data = await res.json();
+        if (!data.success) { showToast(data.message, 'error'); return; }
+        sessionId = data.session_id;
+        scheduledEnd = new Date(data.scheduled_end);
+      } catch(e) { showToast('Server error', 'error'); return; }
+
+      // Start camera
+      try {
+        videoStream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});
+        document.getElementById('liveVideo').srcObject = videoStream;
+      } catch(e) { showToast('Camera access denied', 'error'); return; }
+
+      // Connect socket
+      socket = io('http://localhost:5000');
+      socket.on('connect', () => {
+        socket.emit('start_stream', {session_id: sessionId});
+        showToast('Session started! Auto-stops in ' + durationMin + ' min', 'success');
+      });
+
+      socket.on('processed_frame', handleProcessedFrame);
+
+      // Handle auto-stop from server
+      socket.on('session_auto_stopped', (data) => {
+        handleAutoStop(data.message);
+      });
+
+      // Send frames
+      const sendCanvas = document.createElement('canvas');
+      frameInterval = setInterval(() => {
+        if (sessionStopped) return;
+        const video = document.getElementById('liveVideo');
+        if (!video.videoWidth) return;
+        sendCanvas.width = video.videoWidth;
+        sendCanvas.height = video.videoHeight;
+        sendCanvas.getContext('2d').drawImage(video, 0, 0);
+        const frame = sendCanvas.toDataURL('image/jpeg', 0.6);
+        socket.emit('video_frame', {frame, section});
+      }, 1000);
+
+      // UI state
+      document.getElementById('setupPanel').classList.add('hidden');
+      document.getElementById('livePanel').classList.remove('hidden');
+      document.getElementById('startBtn').classList.add('hidden');
+      document.getElementById('stopBtn').classList.remove('hidden');
+      document.getElementById('sessionInfo').textContent = `${subject} | Section ${section} | Duration: ${durationMin} min | Session: ${sessionId}`;
+
+      startTime = new Date();
+      sessionStopped = false;
+
+      // Start timers
+      elapsedInterval = setInterval(updateElapsed, 1000);
+      countdownInterval = setInterval(updateCountdown, 1000);
+      updateCountdown();
+    }
+
+    function handleProcessedFrame(data) {
+      const faces = data.faces || [];
+      document.getElementById('liveFaces').textContent = faces.length;
+
+      // Draw overlays
+      const canvas = document.getElementById('overlayCanvas');
+      const video = document.getElementById('liveVideo');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      let presentCount = 0;
+      faces.forEach(f => {
+        const [x1, y1, x2, y2] = f.bbox;
+        const isKnown = f.uid && f.uid !== '';
+        ctx.strokeStyle = isKnown ? '#10b981' : '#f43f5e';
+        ctx.lineWidth = 2;
+        ctx.strokeRect(x1, y1, x2-x1, y2-y1);
+
+        if (isKnown) {
+          // Draw name label with attention info
+          const moodEmojis = {focused:'🎯',happy:'😊',neutral:'😐',confused:'😕',bored:'😴',stressed:'😰'};
+          const att = f.attention || 0;
+          const moodE = moodEmojis[f.mood] || '😐';
+          const label = `${f.name} (${Math.round(f.confidence*100)}%)`;
+          const attLabel = `${moodE} ${att}% Attn`;
+          
+          // Name label
+          ctx.fillStyle = 'rgba(16,185,129,0.85)';
+          const labelW = ctx.measureText(label).width + 16;
+          ctx.fillRect(x1, y1 - 24, labelW, 24);
+          ctx.fillStyle = '#fff';
+          ctx.font = 'bold 12px Inter, sans-serif';
+          ctx.fillText(label, x1 + 8, y1 - 7);
+          
+          // Attention label below face
+          const attColor = att >= 70 ? 'rgba(16,185,129,0.85)' : att >= 40 ? 'rgba(245,158,11,0.85)' : 'rgba(244,63,94,0.85)';
+          ctx.fillStyle = attColor;
+          const attW = ctx.measureText(attLabel).width + 16;
+          ctx.fillRect(x1, y2, attW, 20);
+          ctx.fillStyle = '#fff';
+          ctx.font = '11px Inter, sans-serif';
+          ctx.fillText(attLabel, x1 + 8, y2 + 14);
+
+          if (!detectedStudents[f.uid]) {
+            detectedStudents[f.uid] = {name: f.name, firstSeen: new Date(), totalSeconds: 0, lastSeen: new Date(), attention: att, mood: f.mood};
+          }
+          const now = new Date();
+          const delta = (now - detectedStudents[f.uid].lastSeen) / 1000;
+          if (delta < 5) { // If seen within 5 seconds, add time
+            detectedStudents[f.uid].totalSeconds += delta;
+          }
+          detectedStudents[f.uid].lastSeen = now;
+          detectedStudents[f.uid].attention = att;
+          detectedStudents[f.uid].mood = f.mood;
+        }
+      });
+
+      // Count students meeting 75% threshold
+      const elapsed = (new Date() - startTime) / 1000;
+      Object.values(detectedStudents).forEach(s => {
+        const pct = elapsed > 0 ? (s.totalSeconds / elapsed) * 100 : 0;
+        if (pct >= 75) presentCount++;
+      });
+
+      document.getElementById('livePresent').textContent = presentCount;
+      document.getElementById('rosterCount').textContent = `${Object.keys(detectedStudents).length} detected`;
+      updateRoster();
+    }
+
+    function updateRoster() {
+      const entries = Object.entries(detectedStudents);
+      const elapsed = Math.max(1, (new Date() - startTime) / 1000);
+
+      // Detected students
+      let html = entries.map(([uid, s]) => {
+        const pct = Math.min(100, Math.round((s.totalSeconds / elapsed) * 100));
+        const pctClass = pct >= 75 ? 'presence-high' : pct >= 50 ? 'presence-mid' : 'presence-low';
+        const mins = Math.round(s.totalSeconds / 60 * 10) / 10;
+        const moodEmojis = {focused:'🎯',happy:'😊',neutral:'😐',confused:'😕',bored:'😴',stressed:'😰'};
+        const mE = moodEmojis[s.mood] || '';
+        const attColor = (s.attention||0) >= 70 ? 'var(--accent-emerald)' : (s.attention||0) >= 40 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+        return `
+          <div class="roster-item">
+            <div class="avatar" style="width:32px;height:32px;font-size:0.7rem;">${s.name[0]}</div>
+            <div class="student-info">
+              <div class="student-name">${s.name} ${mE}</div>
+              <div class="student-uid">${uid} | ${mins} min | <span style="color:${attColor};font-weight:600;">${s.attention||0}% Attn</span></div>
+            </div>
+            <span class="presence-badge ${pctClass}">${pct}%</span>
+            <div class="override-btns">
+              <button class="btn-mark-present" onclick="manualOverride('${uid}','manual_present')" title="Force Present">P</button>
+              <button class="btn-mark-absent" onclick="manualOverride('${uid}','manual_absent')" title="Force Absent">A</button>
+            </div>
+          </div>`;
+      }).join('');
+
+      if (entries.length > 0) {
+        document.getElementById('rosterList').innerHTML = html;
+      }
+
+      // Show enrolled but not detected
+      const detectedUids = new Set(entries.map(([uid]) => uid));
+      const notDetected = enrolledStudents.filter(s => !detectedUids.has(s.uid));
+
+      if (notDetected.length > 0) {
+        document.getElementById('enrolledSection').style.display = 'block';
+        document.getElementById('enrolledList').innerHTML = notDetected.map(s => `
+          <div class="roster-item" style="opacity:0.6;">
+            <div class="avatar" style="width:32px;height:32px;font-size:0.7rem;">${s.name[0]}</div>
+            <div class="student-info">
+              <div class="student-name">${s.name}</div>
+              <div class="student-uid">${s.uid} | Not detected</div>
+            </div>
+            <span class="presence-badge presence-low">0%</span>
+            <div class="override-btns">
+              <button class="btn-mark-present" onclick="manualOverride('${s.uid}','manual_present')" title="Force Present">P</button>
+            </div>
+          </div>
+        `).join('');
+      }
+    }
+
+    async function manualOverride(studentUid, status) {
+      try {
+        const res = await fetch(`${API}/attendance/override`, {
+          method: 'POST', headers,
+          body: JSON.stringify({student_uid: studentUid, session_id: sessionId, status})
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`${studentUid} marked as ${status.replace('manual_','')}`, 'success');
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch(e) { showToast('Override failed', 'error'); }
+    }
+
+    function updateElapsed() {
+      const elapsed = Math.floor((new Date() - startTime) / 1000);
+      const m = String(Math.floor(elapsed / 60)).padStart(2, '0');
+      const s = String(elapsed % 60).padStart(2, '0');
+      document.getElementById('liveElapsed').textContent = `${m}:${s}`;
+    }
+
+    function updateCountdown() {
+      if (!scheduledEnd) return;
+      const remaining = Math.max(0, Math.floor((scheduledEnd - new Date()) / 1000));
+      const m = String(Math.floor(remaining / 60)).padStart(2, '0');
+      const s = String(remaining % 60).padStart(2, '0');
+      const display = document.getElementById('countdownDisplay');
+      display.textContent = `${m}:${s}`;
+
+      // Color coding
+      display.classList.remove('warning', 'critical');
+      if (remaining <= 60) display.classList.add('critical');
+      else if (remaining <= 180) display.classList.add('warning');
+
+      if (remaining <= 0 && !sessionStopped) {
+        handleAutoStop('Session time completed');
+      }
+    }
+
+    function handleAutoStop(message) {
+      sessionStopped = true;
+      clearInterval(frameInterval);
+      clearInterval(elapsedInterval);
+      clearInterval(countdownInterval);
+      if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); }
+      if (socket) { socket.disconnect(); }
+
+      document.getElementById('autoStopBanner').classList.remove('hidden');
+      document.getElementById('autoStopMessage').textContent = message || 'Attendance has been calculated and saved.';
+      document.getElementById('liveContent').style.opacity = '0.4';
+      document.getElementById('liveContent').style.pointerEvents = 'none';
+      document.getElementById('stopBtn').classList.add('hidden');
+      document.getElementById('countdownDisplay').textContent = '00:00';
+      document.getElementById('sessionInfo').textContent = 'Session completed — attendance saved';
+      showToast('Session auto-stopped. Attendance saved!', 'success');
+    }
+
+    async function stopSession() {
+      if (sessionStopped) return;
+      sessionStopped = true;
+      clearInterval(frameInterval);
+      clearInterval(elapsedInterval);
+      clearInterval(countdownInterval);
+      if (socket) { socket.emit('stop_stream', {}); socket.disconnect(); }
+      if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); }
+
+      // Stop session on server (this triggers attendance calculation)
+      try {
+        await fetch(`${API}/attendance/stop`, {method:'POST', headers, body: JSON.stringify({session_id: sessionId})});
+      } catch(e) { console.error(e); }
+
+      document.getElementById('autoStopBanner').classList.remove('hidden');
+      document.getElementById('autoStopMessage').textContent = 'Session ended manually. Attendance calculated based on tracked presence.';
+      document.getElementById('liveContent').style.opacity = '0.4';
+      document.getElementById('liveContent').style.pointerEvents = 'none';
+      document.getElementById('stopBtn').classList.add('hidden');
+      document.getElementById('sessionInfo').textContent = 'Session completed';
+      showToast(`Session ended. Attendance saved with 75% threshold.`, 'success');
+    }
+
+    function logout() { localStorage.clear(); window.location.href='../login.html?role=teacher'; }
+    function showToast(msg,type='info'){const c=document.getElementById('toastContainer');const t=document.createElement('div');t.className=`toast ${type}`;t.innerHTML=`<span>${type==='success'?'✓':'✗'}</span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;c.appendChild(t);setTimeout(()=>{t.style.opacity='0';setTimeout(()=>t.remove(),300);},4000);}
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

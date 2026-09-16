@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Assignments — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .assignment-grid { display: grid; gap: var(--space-lg); }
+    .a-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); transition: var(--transition-base); position: relative; overflow: hidden; }
+    .a-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--gradient-blue); opacity: 0; transition: var(--transition-base); }
+    .a-card:hover { border-color: var(--border-light); transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .a-card:hover::before { opacity: 1; }
+    .a-card-head { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: var(--space-md); }
+    .a-card-title { font-weight: 700; font-size: 1.1rem; }
+    .a-card-meta { display: flex; gap: var(--space-lg); flex-wrap: wrap; font-size: 0.8rem; color: var(--text-muted); margin-top: var(--space-sm); }
+    .a-card-meta span { display: flex; align-items: center; gap: 4px; }
+    .a-card-actions { display: flex; gap: var(--space-sm); margin-top: var(--space-md); }
+    .file-count { display: inline-flex; align-items: center; gap: 4px; padding: 2px 10px; border-radius: var(--radius-full); font-size: 0.7rem; font-weight: 600; background: rgba(139,92,246,0.15); color: var(--accent-purple); }
+
+    /* Create Modal Styles */
+    .dropzone { border: 2px dashed var(--border-light); border-radius: var(--radius-lg); padding: var(--space-xl); text-align: center; cursor: pointer; transition: var(--transition-base); background: rgba(59,130,246,0.03); }
+    .dropzone:hover, .dropzone.dragover { border-color: var(--accent-blue); background: rgba(59,130,246,0.08); }
+    .dropzone-icon { font-size: 2.5rem; margin-bottom: var(--space-sm); }
+    .file-list { display: flex; flex-direction: column; gap: var(--space-sm); margin-top: var(--space-md); }
+    .file-item { display: flex; align-items: center; gap: var(--space-sm); padding: 8px 12px; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); font-size: 0.85rem; }
+    .file-item .file-icon { font-size: 1.2rem; }
+    .file-item .file-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .file-item .file-remove { cursor: pointer; color: var(--accent-rose); font-weight: 700; padding: 2px 6px; border-radius: 4px; border: none; background: rgba(244,63,94,0.1); }
+    .file-item .file-remove:hover { background: rgba(244,63,94,0.25); }
+
+    /* Submissions Panel */
+    .sub-panel { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); margin-top: var(--space-lg); overflow: hidden; }
+    .sub-header { padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border-subtle); display: flex; justify-content: space-between; align-items: center; }
+    .sub-item { display: flex; align-items: center; gap: var(--space-md); padding: var(--space-md) var(--space-lg); border-bottom: 1px solid var(--border-subtle); transition: background 0.2s; }
+    .sub-item:hover { background: rgba(59,130,246,0.04); }
+    .sub-info { flex: 1; }
+    .sub-name { font-weight: 600; font-size: 0.9rem; }
+    .sub-uid { font-size: 0.75rem; color: var(--text-muted); }
+
+    /* AI Analysis Card */
+    .ai-card { background: linear-gradient(135deg, rgba(139,92,246,0.08), rgba(59,130,246,0.08)); border: 1px solid rgba(139,92,246,0.2); border-radius: var(--radius-lg); padding: var(--space-lg); margin-top: var(--space-md); animation: fadeInUp 0.5s; }
+    .ai-card h4 { color: var(--accent-purple); margin-bottom: var(--space-md); display: flex; align-items: center; gap: var(--space-sm); }
+    .ai-score-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: var(--space-md); margin-bottom: var(--space-md); }
+    .ai-score-item { text-align: center; padding: var(--space-md); background: rgba(0,0,0,0.15); border-radius: var(--radius-md); }
+    .ai-score-value { font-size: 1.5rem; font-weight: 800; font-family: var(--font-heading); }
+    .ai-score-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .ai-remarks { font-size: 0.9rem; line-height: 1.7; color: var(--text-secondary); }
+    .ai-list { display: flex; flex-direction: column; gap: 4px; margin: var(--space-sm) 0; }
+    .ai-list-item { font-size: 0.85rem; padding: 4px 0; display: flex; align-items: flex-start; gap: 6px; }
+    .score-high { color: var(--accent-emerald); }
+    .score-mid { color: var(--accent-amber); }
+    .score-low { color: var(--accent-rose); }
+
+    .analyzing-spinner { display: flex; flex-direction: column; align-items: center; gap: var(--space-md); padding: var(--space-xl); }
+    .analyzing-spinner .loader { width: 48px; height: 48px; border-width: 4px; }
+    @keyframes fadeInUp { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item active" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>📚 Assignments</h1>
+      <button class="btn btn-primary" onclick="document.getElementById('createModal').classList.add('active')">+ Create Assignment</button>
+    </div>
+
+    <div id="assignmentsList" class="assignment-grid">
+      <div class="glass-card"><div class="empty-state"><div class="empty-icon">📚</div><h3>No assignments yet</h3><p>Create your first assignment with file attachments</p></div></div>
+    </div>
+
+    <!-- Submissions Panel (shown when viewing an assignment) -->
+    <div id="submissionsPanel" class="hidden"></div>
+  </main>
+
+  <!-- Create Assignment Modal -->
+  <div class="modal-overlay" id="createModal">
+    <div class="modal-content" style="max-width:640px;">
+      <div class="modal-header"><h3><i class="fas fa-pen-to-square" style="font-size:1.1rem;"></i> Create Assignment</h3><button class="modal-close" onclick="document.getElementById('createModal').classList.remove('active')">×</button></div>
+      <form id="createForm" onsubmit="createAssignment(event)" style="display:flex;flex-direction:column;gap:var(--space-md);">
+        <div class="form-group"><label class="form-label">Title *</label><input class="form-input" id="aTitle" required placeholder="Assignment title"></div>
+        <div class="form-group"><label class="form-label">Description</label><textarea class="form-input" id="aDesc" rows="3" placeholder="Detailed instructions for students..."></textarea></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:var(--space-md);">
+          <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="aSubject" placeholder="Mathematics"></div>
+          <div class="form-group"><label class="form-label">Section</label><input class="form-input" id="aSection" placeholder="CSE-A"></div>
+          <div class="form-group"><label class="form-label">Max Score</label><input type="number" class="form-input" id="aMaxScore" value="100" min="1"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Due Date</label><input type="date" class="form-input" id="aDue"></div>
+
+        <!-- File Dropzone -->
+        <div class="form-group">
+          <label class="form-label">📎 Attachments (PDF, Images, Word, etc.)</label>
+          <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+            <div class="dropzone-icon">📁</div>
+            <div style="font-weight:600;">Drop files here or click to browse</div>
+            <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">PDF, DOC, DOCX, Images, ZIP — Max 50MB each</div>
+          </div>
+          <input type="file" id="fileInput" multiple hidden accept=".pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.jpg,.jpeg,.png,.gif,.bmp,.txt,.csv,.md">
+          <div class="file-list" id="fileList"></div>
+        </div>
+
+        <button type="submit" class="btn btn-primary btn-lg w-full" id="createBtn">🚀 Create Assignment</button>
+      </form>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=teacher';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    let selectedFiles = [];
+
+    // File dropzone
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('dragover'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('dragover'));
+    dropzone.addEventListener('drop', e => { e.preventDefault(); dropzone.classList.remove('dragover'); addFiles(e.dataTransfer.files); });
+    fileInput.addEventListener('change', e => addFiles(e.target.files));
+
+    function getFileIcon(name) {
+      const ext = name.split('.').pop().toLowerCase();
+      const icons = {pdf:'📄',doc:'<i class="fas fa-pen-to-square" style="font-size:1.1rem;"></i>',docx:'<i class="fas fa-pen-to-square" style="font-size:1.1rem;"></i>',ppt:'<i class="fas fa-chart-line" style="font-size:1.1rem;"></i>',pptx:'<i class="fas fa-chart-line" style="font-size:1.1rem;"></i>',xls:'<i class="fas fa-chart-line" style="font-size:1.1rem;"></i>',xlsx:'<i class="fas fa-chart-line" style="font-size:1.1rem;"></i>',zip:'📦',rar:'📦',jpg:'🖼️',jpeg:'🖼️',png:'🖼️',gif:'🖼️',txt:'📃',csv:'<i class="fas fa-chart-line" style="font-size:1.1rem;"></i>',md:'📃'};
+      return icons[ext] || '📎';
+    }
+    function formatSize(bytes) { return bytes < 1024 ? bytes + ' B' : bytes < 1048576 ? (bytes/1024).toFixed(1) + ' KB' : (bytes/1048576).toFixed(1) + ' MB'; }
+
+    function addFiles(files) {
+      for (const f of files) { selectedFiles.push(f); }
+      renderFileList();
+    }
+    function removeFile(idx) { selectedFiles.splice(idx, 1); renderFileList(); }
+    function renderFileList() {
+      const list = document.getElementById('fileList');
+      list.innerHTML = selectedFiles.map((f, i) => `
+        <div class="file-item"><span class="file-icon">${getFileIcon(f.name)}</span>
+        <span class="file-name">${f.name}</span><span style="color:var(--text-muted);font-size:0.75rem;">${formatSize(f.size)}</span>
+        <button type="button" class="file-remove" onclick="removeFile(${i})">✕</button></div>`).join('');
+    }
+
+    async function createAssignment(e) {
+      e.preventDefault();
+      const btn = document.getElementById('createBtn');
+      btn.disabled = true; btn.textContent = '⏳ Creating...';
+
+      const formData = new FormData();
+      formData.append('title', document.getElementById('aTitle').value);
+      formData.append('description', document.getElementById('aDesc').value);
+      formData.append('subject', document.getElementById('aSubject').value);
+      formData.append('section', document.getElementById('aSection').value);
+      formData.append('due_date', document.getElementById('aDue').value);
+      formData.append('max_score', document.getElementById('aMaxScore').value);
+      selectedFiles.forEach(f => formData.append('files', f));
+
+      try {
+        const r = await fetch(`${API}/assignments/create-with-files`, {
+          method: 'POST', headers: {'Authorization': `Bearer ${token}`}, body: formData
+        });
+        const d = await r.json();
+        if (d.success) {
+          showToast(`Assignment created with ${selectedFiles.length} file(s)!`, 'success');
+          document.getElementById('createModal').classList.remove('active');
+          document.getElementById('createForm').reset();
+          selectedFiles = []; renderFileList();
+          loadAssignments();
+        } else showToast(d.message, 'error');
+      } catch(e) { showToast('Error creating assignment', 'error'); }
+      btn.disabled = false; btn.textContent = '🚀 Create Assignment';
+    }
+
+    async function loadAssignments() {
+      try {
+        const r = await fetch(`${API}/assignments`, {headers});
+        const d = await r.json();
+        if (d.success && d.assignments.length > 0) {
+          document.getElementById('assignmentsList').innerHTML = d.assignments.map(a => `
+            <div class="a-card">
+              <div class="a-card-head">
+                <div>
+                  <div class="a-card-title">${a.title}</div>
+                  <div class="a-card-meta">
+                    <span>📖 ${a.subject||'General'}</span>
+                    <span>🏫 ${a.section||'All'}</span>
+                    <span><i class="fas fa-calendar-alt" style="font-size:1.1rem;"></i> Due: ${a.due_date||'No date'}</span>
+                    ${a.max_score?`<span>💯 Max: ${a.max_score}</span>`:''}
+                  </div>
+                </div>
+                <div style="display:flex;gap:var(--space-sm);align-items:center;">
+                  ${a.attachment_count>0?`<span class="file-count">📎 ${a.attachment_count} file(s)</span>`:''}
+                  <span class="badge badge-blue">${a.subject||''}</span>
+                </div>
+              </div>
+              ${a.description?`<p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:var(--space-md);">${a.description}</p>`:''}
+              <div class="a-card-actions">
+                <button class="btn btn-ghost btn-sm" onclick="viewSubmissions('${a.id}','${a.title}')">📋 View Submissions</button>
+                <button class="btn btn-ghost btn-sm" onclick="viewAttachments('${a.id}')">📎 Files</button>
+              </div>
+            </div>`).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function viewSubmissions(aid, title) {
+      const panel = document.getElementById('submissionsPanel');
+      panel.classList.remove('hidden');
+      panel.innerHTML = `<div class="sub-panel"><div class="sub-header"><h3>📋 Submissions — ${title}</h3><button class="btn btn-ghost btn-sm" onclick="document.getElementById('submissionsPanel').classList.add('hidden')">✕ Close</button></div><div style="padding:var(--space-lg);text-align:center;"><div class="loader" style="margin:0 auto;"></div><p style="margin-top:var(--space-md);color:var(--text-muted);">Loading submissions...</p></div></div>`;
+      panel.scrollIntoView({behavior:'smooth'});
+
+      try {
+        const r = await fetch(`${API}/assignments/${aid}/submissions`, {headers});
+        const d = await r.json();
+        if (d.success) {
+          const subs = d.submissions;
+          let html = `<div class="sub-panel"><div class="sub-header"><h3>📋 Submissions — ${title}</h3><div style="display:flex;gap:var(--space-sm);align-items:center;"><span class="badge badge-green">${subs.length} submitted</span><button class="btn btn-ghost btn-sm" onclick="document.getElementById('submissionsPanel').classList.add('hidden')">✕ Close</button></div></div>`;
+          if (subs.length === 0) {
+            html += `<div style="padding:var(--space-xl);text-align:center;color:var(--text-muted);">No submissions yet</div>`;
+          } else {
+            subs.forEach(s => {
+              const hasAI = s.ai_analyzed;
+              html += `<div class="sub-item">
+                <div class="avatar" style="width:36px;height:36px;font-size:0.8rem;">${(s.student_name||s.student_uid||'?')[0]}</div>
+                <div class="sub-info">
+                  <div class="sub-name">${s.student_name||s.student_uid}</div>
+                  <div class="sub-uid">${s.student_uid} • ${s.file_name} • ${s.submitted_at||''}</div>
+                </div>
+                ${s.grade?`<span class="badge badge-green">${s.grade}</span>`:''}
+                ${hasAI?`<span class="badge badge-purple">🤖 AI Analyzed</span>`:''}
+                <div style="display:flex;gap:4px;">
+                  <button class="btn btn-ghost btn-sm" onclick="analyzeWithAI('${aid}','${s.student_uid}',this)" ${hasAI?'':'style="border-color:rgba(139,92,246,0.3);color:var(--accent-purple);"'}>${hasAI?'🔄 Re-analyze':'🤖 AI Analyze'}</button>
+                </div>
+              </div>
+              <div id="ai-result-${s.student_uid}">${hasAI?renderAIResult(s):''}</div>`;
+            });
+          }
+          html += `</div>`;
+          panel.innerHTML = html;
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    function renderAIResult(sub) {
+      try {
+        const data = JSON.parse(sub.ai_remarks || '{}');
+        if (!data.summary) return '';
+        const sc = (v,h=80,m=50) => v>=h?'score-high':v>=m?'score-mid':'score-low';
+        return `<div class="ai-card" style="margin:0 var(--space-lg) var(--space-md);">
+          <h4 style="display:flex;align-items:center;gap:8px;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a4 4 0 0 1 4 4v1a4 4 0 0 1-8 0V6a4 4 0 0 1 4-4z"/><path d="M16 15H8a5 5 0 0 0-5 5v1h18v-1a5 5 0 0 0-5-5z"/></svg> AI Analysis Report</h4>
+          <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-bottom:var(--space-md);">
+            <div class="ai-score-item"><div class="ai-score-value ${sc(data.relevance_score||0)}">${data.relevance_score||0}%</div><div class="ai-score-label">Relevance</div></div>
+            <div class="ai-score-item"><div class="ai-score-value ${sc(data.quality_rating||0,7,4)}">${data.quality_rating||0}/10</div><div class="ai-score-label">Quality</div></div>
+            <div class="ai-score-item"><div class="ai-score-value ${sc(data.completeness_score||0)}">${data.completeness_score||0}%</div><div class="ai-score-label">Completeness</div></div>
+            <div class="ai-score-item"><div class="ai-score-value ${sc(data.accuracy_score||0)}">${data.accuracy_score||0}%</div><div class="ai-score-label">Accuracy</div></div>
+            <div class="ai-score-item"><div class="ai-score-value" style="color:var(--accent-blue);">${data.grade_suggestion||'N/A'}</div><div class="ai-score-label">${data.suggested_score?data.suggested_score+' pts':'Grade'}</div></div>
+          </div>
+          <div style="margin-bottom:var(--space-md);"><strong style="font-size:0.85rem;">Summary:</strong><p class="ai-remarks">${data.summary||''}</p></div>
+          ${data.strengths&&data.strengths.length?`<div style="margin-bottom:var(--space-sm);"><strong style="font-size:0.85rem;color:var(--accent-emerald);">✓ Strengths:</strong><div class="ai-list">${data.strengths.map(s=>`<div class="ai-list-item"><span style="color:var(--accent-emerald);">●</span>${s}</div>`).join('')}</div></div>`:''}
+          ${data.weaknesses&&data.weaknesses.length?`<div style="margin-bottom:var(--space-sm);"><strong style="font-size:0.85rem;color:var(--accent-amber);">△ Areas for Improvement:</strong><div class="ai-list">${data.weaknesses.map(s=>`<div class="ai-list-item"><span style="color:var(--accent-amber);">●</span>${s}</div>`).join('')}</div></div>`:''}
+          ${data.key_concepts_covered&&data.key_concepts_covered.length?`<div style="margin-bottom:var(--space-sm);"><strong style="font-size:0.85rem;color:var(--accent-blue);">Key Concepts Covered:</strong><div style="display:flex;gap:4px;flex-wrap:wrap;margin-top:4px;">${data.key_concepts_covered.map(c=>`<span style="padding:2px 10px;border-radius:20px;font-size:0.75rem;background:rgba(59,130,246,0.1);border:1px solid rgba(59,130,246,0.2);color:var(--accent-blue);">${c}</span>`).join('')}</div></div>`:''}
+          ${data.missing_elements&&data.missing_elements.length?`<div style="margin-bottom:var(--space-sm);"><strong style="font-size:0.85rem;color:var(--accent-rose);">✗ Missing Elements:</strong><div class="ai-list">${data.missing_elements.map(s=>`<div class="ai-list-item"><span style="color:var(--accent-rose);">●</span>${s}</div>`).join('')}</div></div>`:''}
+          <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:var(--space-md);"><strong style="font-size:0.85rem;">Detailed Remarks:</strong><p class="ai-remarks">${data.remarks||''}</p></div>
+        </div>`;
+      } catch(e) { return ''; }
+    }
+
+    async function analyzeWithAI(aid, studentUid, btn) {
+      btn.disabled = true; btn.textContent = '⏳ Analyzing...';
+      const resultDiv = document.getElementById(`ai-result-${studentUid}`);
+      resultDiv.innerHTML = `<div class="analyzing-spinner" style="margin:0 var(--space-lg) var(--space-md);"><div class="loader"></div><p style="color:var(--text-muted);">🤖 AI is analyzing the submission...</p></div>`;
+
+      try {
+        const r = await fetch(`${API}/assignments/${aid}/ai-analyze`, {
+          method: 'POST', headers, body: JSON.stringify({student_uid: studentUid})
+        });
+        const d = await r.json();
+        if (d.success) {
+          const data = d.analysis;
+          const fakeSubmission = {ai_remarks: JSON.stringify(data), ai_analyzed: 1};
+          resultDiv.innerHTML = renderAIResult(fakeSubmission);
+          showToast('AI analysis complete!', 'success');
+        } else { showToast(d.message, 'error'); resultDiv.innerHTML = ''; }
+      } catch(e) { showToast('AI analysis failed', 'error'); resultDiv.innerHTML = ''; }
+      btn.disabled = false; btn.textContent = '🔄 Re-analyze';
+    }
+
+    async function viewAttachments(aid) {
+      try {
+        const r = await fetch(`${API}/assignments/${aid}/attachments`, {headers});
+        const d = await r.json();
+        if (d.success && d.attachments.length > 0) {
+          const files = d.attachments.map(a => `<a href="${API.replace('/api','')}/api/assignments/${aid}/download/${encodeURIComponent(a.file_name)}" target="_blank" class="file-item" style="text-decoration:none;color:inherit;"><span class="file-icon">${getFileIcon(a.file_name)}</span><span class="file-name">${a.file_name}</span><span style="color:var(--text-muted);font-size:0.75rem;">${formatSize(a.file_size||0)}</span><span style="color:var(--accent-blue);font-size:0.8rem;">⬇ Download</span></a>`).join('');
+          showToast(`${d.attachments.length} attachment(s) found`, 'info');
+          // Show in a mini modal
+          const modal = document.createElement('div');
+          modal.className = 'modal-overlay active';
+          modal.innerHTML = `<div class="modal-content" style="max-width:480px;"><div class="modal-header"><h3>📎 Attachments</h3><button class="modal-close" onclick="this.closest('.modal-overlay').remove()">×</button></div><div class="file-list">${files}</div></div>`;
+          modal.addEventListener('click', e => { if (e.target === modal) modal.remove(); });
+          document.body.appendChild(modal);
+        } else showToast('No attachments', 'info');
+      } catch(e) { showToast('Error loading attachments', 'error'); }
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=teacher';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':t==='error'?'❌':'ℹ️'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+    loadAssignments();
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

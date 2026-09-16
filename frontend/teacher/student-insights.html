@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Insights — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .insights-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--space-lg); }
+    .insight-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-lg); transition: var(--transition-base); position: relative; overflow: hidden; }
+    .insight-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; opacity: 0; transition: var(--transition-base); }
+    .insight-card:hover { border-color: var(--border-light); transform: translateY(-3px); box-shadow: var(--shadow-md); }
+    .insight-card:hover::before { opacity: 1; }
+    .insight-card.engaged::before { background: var(--gradient-emerald); }
+    .insight-card.moderate::before { background: linear-gradient(135deg, #f59e0b, #ef4444); }
+    .insight-card.disengaged::before { background: var(--gradient-rose); }
+
+    .insight-top { display: flex; align-items: center; gap: var(--space-md); margin-bottom: var(--space-md); }
+    .insight-avatar { width: 48px; height: 48px; border-radius: var(--radius-full); overflow: hidden; }
+    .insight-avatar img { width: 100%; height: 100%; object-fit: cover; }
+    .insight-name { font-weight: 700; font-size: 1rem; }
+    .insight-uid { font-size: 0.75rem; color: var(--text-muted); }
+    .insight-mood { font-size: 1.5rem; }
+
+    .insight-stats { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm); margin-bottom: var(--space-md); }
+    .insight-stat { text-align: center; padding: 8px; background: rgba(0,0,0,0.1); border-radius: var(--radius-md); }
+    .insight-stat .val { font-size: 1.1rem; font-weight: 800; font-family: var(--font-heading); }
+    .insight-stat .lbl { font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+
+    .engagement-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: var(--radius-full); overflow: hidden; margin-bottom: 4px; }
+    .engagement-fill { height: 100%; border-radius: var(--radius-full); transition: width 0.8s ease; }
+    .engagement-label { display: flex; justify-content: space-between; font-size: 0.7rem; color: var(--text-muted); }
+
+    .insight-actions { display: flex; gap: 4px; margin-top: var(--space-sm); }
+    .action-btn { padding: 5px 10px; border-radius: var(--radius-md); font-size: 0.75rem; font-weight: 600; border: 1px solid var(--border-subtle); background: transparent; color: var(--text-secondary); cursor: pointer; transition: var(--transition-fast); display: flex; align-items: center; gap: 4px; }
+    .action-btn:hover { border-color: var(--accent-blue); color: var(--accent-blue); background: rgba(59,130,246,0.08); }
+    .action-btn.hand { border-color: rgba(245,158,11,0.3); color: var(--accent-amber); }
+    .action-btn.hand:hover { background: rgba(245,158,11,0.1); }
+    .action-btn.answer { border-color: rgba(16,185,129,0.3); color: var(--accent-emerald); }
+    .action-btn.answer:hover { background: rgba(16,185,129,0.1); }
+
+    .filter-bar { display: flex; gap: var(--space-md); margin-bottom: var(--space-lg); flex-wrap: wrap; align-items: center; }
+    .session-select { padding: 10px 16px; background: var(--bg-input); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); color: var(--text-primary); font-size: 0.9rem; min-width: 250px; }
+
+    .mood-map { font-size: 1.2rem; }
+    .overall-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: var(--space-md); margin-bottom: var(--space-xl); }
+
+    @keyframes fadeInCard { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="timetable.html"><span class="nav-icon"><i class="fas fa-calendar-alt"></i></span> Schedule</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-video"></i></span> Live Session</a>
+      <a class="nav-item" href="students.html"><span class="nav-icon"><i class="fas fa-user-graduate"></i></span> Students</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon"><i class="fas fa-chart-bar"></i></span> Analytics</a>
+      <a class="nav-item active" href="student-insights.html"><span class="nav-icon"><i class="fas fa-lightbulb"></i></span> Insights</a>
+      <a class="nav-item" href="chatbot.html"><span class="nav-icon"><i class="fas fa-robot"></i></span> AI Copilot</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div><h1>🧠 Student Insights</h1><p class="text-muted text-sm">AI-powered engagement monitoring — auto-tracked during live attendance</p></div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        <span id="autoRefreshBadge" class="badge badge-green" style="display:none;animation:pulse 2s infinite;">⚡ Live Updating</span>
+      </div>
+    </div>
+
+    <!-- Session Selector -->
+    <div class="filter-bar">
+      <select class="session-select form-input" id="sessionSelect" onchange="loadInsights()">
+        <option value="">— Select a session —</option>
+      </select>
+      <span class="badge badge-purple" id="sessionStatus"></span>
+    </div>
+
+    <!-- Overall Stats -->
+    <div class="overall-stats" id="overallStats">
+      <div class="stat-card animate-fadeInUp stagger-1"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);">🎯</div><div class="stat-value" id="avgEngagement">—</div><div class="stat-label">Avg Engagement</div></div>
+      <div class="stat-card animate-fadeInUp stagger-2"><div class="stat-icon" style="background:rgba(245,158,11,0.12);color:var(--accent-amber);">✋</div><div class="stat-value" id="totalHands">0</div><div class="stat-label">Hand Raises</div></div>
+      <div class="stat-card animate-fadeInUp stagger-3"><div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);">💬</div><div class="stat-value" id="totalAnswers">0</div><div class="stat-label">Answers Given</div></div>
+      <div class="stat-card animate-fadeInUp stagger-4"><div class="stat-icon" style="background:rgba(139,92,246,0.12);color:var(--accent-purple);">👥</div><div class="stat-value" id="totalStudents">0</div><div class="stat-label">Students Tracked</div></div>
+    </div>
+
+    <!-- Student Insight Cards -->
+    <div class="insights-grid" id="insightsGrid">
+      <div class="glass-card" style="grid-column:1/-1;">
+        <div class="empty-state">
+          <div class="empty-icon">🧠</div>
+          <h3>Select a session to view insights</h3>
+          <p>Student engagement, attention levels, mood, and participation data will appear here</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- AI Teaching Suggestions -->
+    <div id="aiSuggestionsPanel" style="display:none;margin-top:var(--space-xl);">
+      <div style="background:linear-gradient(135deg,rgba(139,92,246,0.08),rgba(59,130,246,0.06));border:1px solid rgba(139,92,246,0.2);border-radius:var(--radius-xl);padding:var(--space-xl);position:relative;overflow:hidden;">
+        <div style="position:absolute;top:-30px;right:-30px;width:120px;height:120px;border-radius:50%;background:radial-gradient(circle,rgba(139,92,246,0.1),transparent);pointer-events:none;"></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);">
+          <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+            <span style="width:36px;height:36px;border-radius:10px;background:rgba(139,92,246,0.15);display:flex;align-items:center;justify-content:center;">🤖</span>
+            AI Teaching Suggestions
+          </h3>
+          <button class="btn btn-sm" id="genSuggestionsBtn" onclick="generateSuggestions()" style="background:linear-gradient(135deg,#8b5cf6,#6366f1);color:#fff;border:none;padding:8px 18px;font-weight:600;">
+            ✨ Generate Suggestions
+          </button>
+        </div>
+        <div id="suggestionsContent" style="font-size:0.9rem;line-height:1.7;color:var(--text-secondary);">
+          <p style="color:var(--text-muted);font-style:italic;">Click "Generate Suggestions" to get AI-powered teaching recommendations based on student engagement data.</p>
+        </div>
+      </div>
+    </div>
+    <!-- Subject-Wise Student Progress -->
+    <div style="margin-top:var(--space-xl);">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:var(--space-lg);">
+        <h3 style="display:flex;align-items:center;gap:8px;margin:0;">
+          <span style="width:36px;height:36px;border-radius:10px;background:rgba(16,185,129,0.15);display:flex;align-items:center;justify-content:center;"><i class="fas fa-chart-line" style="font-size:1.1rem;"></i></span>
+          Subject-Wise Student Progress
+        </h3>
+        <button class="btn btn-sm" onclick="loadSubjectProgress()" style="background:linear-gradient(135deg,#10b981,#059669);color:#fff;border:none;padding:8px 16px;font-weight:600;">
+          📈 Load Progress
+        </button>
+      </div>
+      <div id="subjectProgressGrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:var(--space-lg);">
+        <div class="glass-card" style="grid-column:1/-1;">
+          <p style="color:var(--text-muted);text-align:center;font-style:italic;">Click "Load Progress" to see each student's performance across all subjects.</p>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=teacher';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    let currentSessionId = null;
+
+    const moodEmojis = {
+      'happy': '😊', 'neutral': '😐', 'confused': '😕', 'bored': '😴',
+      'stressed': '😰', 'focused': '🎯', 'excited': '🤩', 'sad': '😢'
+    };
+
+    async function loadSessions() {
+      try {
+        const r = await fetch(`${API}/attendance/sessions`, {headers});
+        const d = await r.json();
+        if (d.success) {
+          const select = document.getElementById('sessionSelect');
+          d.sessions.forEach(s => {
+            const opt = document.createElement('option');
+            opt.value = s.id;
+            opt.textContent = `${s.date} — ${s.subject} (${s.section}) | ${s.status === 'active' ? '<i class="fas fa-circle" style="color:var(--accent-rose);font-size:0.6rem;"></i> LIVE' : '✅ Completed'} | ${s.total_present||0}/${s.total_enrolled||0}`;
+            if (s.status === 'active') opt.style.fontWeight = '700';
+            select.appendChild(opt);
+          });
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    async function loadInsights() {
+      const sessionId = document.getElementById('sessionSelect').value;
+      if (!sessionId) return;
+      currentSessionId = sessionId;
+
+      try {
+        const r = await fetch(`${API}/engagement/${sessionId}`, {headers});
+        const d = await r.json();
+
+        // Also load enrolled students for context
+        const sr = await fetch(`${API}/students`, {headers});
+        const sd = await sr.json();
+        const allStudents = sd.success ? sd.students : [];
+
+        const engagements = d.success ? d.engagement : [];
+        const grid = document.getElementById('insightsGrid');
+
+        // Build map of engaged students
+        const engMap = {};
+        engagements.forEach(e => { engMap[e.student_uid] = e; });
+
+        // Merge with all students (show everyone, even those without engagement data)
+        const cards = allStudents.map(s => {
+          const eng = engMap[s.uid] || {
+            attention_score: 50, mood: 'neutral', hand_raises: 0,
+            answers_given: 0, engagement_score: 50, distraction_count: 0
+          };
+          return { ...s, ...eng };
+        });
+
+        if (cards.length === 0) {
+          grid.innerHTML = `<div class="glass-card" style="grid-column:1/-1;"><div class="empty-state"><div class="empty-icon"><i class="fas fa-chart-line" style="font-size:1.1rem;"></i></div><h3>No data yet</h3><p>Engagement data will appear during live sessions</p></div></div>`;
+          return;
+        }
+
+        // Update overall stats
+        const totalHands = cards.reduce((s, c) => s + (c.hand_raises || 0), 0);
+        const totalAnswers = cards.reduce((s, c) => s + (c.answers_given || 0), 0);
+        const avgEng = Math.round(cards.reduce((s, c) => s + (c.engagement_score || 50), 0) / cards.length);
+        document.getElementById('avgEngagement').textContent = avgEng + '%';
+        document.getElementById('totalHands').textContent = totalHands;
+        document.getElementById('totalAnswers').textContent = totalAnswers;
+        document.getElementById('totalStudents').textContent = cards.length;
+
+        // Render cards
+        grid.innerHTML = cards.map((c, i) => {
+          const eng = c.engagement_score || 50;
+          const att = c.attention_score || 50;
+          const engClass = eng >= 70 ? 'engaged' : eng >= 40 ? 'moderate' : 'disengaged';
+          const engColor = eng >= 70 ? 'var(--accent-emerald)' : eng >= 40 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+          const attColor = att >= 70 ? 'var(--accent-emerald)' : att >= 40 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+          const mood = c.mood || 'neutral';
+          const moodEmoji = moodEmojis[mood] || '😐';
+
+          return `<div class="insight-card ${engClass}" style="animation: fadeInCard 0.4s ease ${i * 0.05}s both;">
+            <div class="insight-top">
+              <div class="insight-avatar"><div class="avatar" style="width:48px;height:48px;font-size:1.1rem;">${(c.name||'?')[0]}</div></div>
+              <div style="flex:1;">
+                <div class="insight-name">${c.name || c.uid}</div>
+                <div class="insight-uid">${c.uid} • ${c.section || 'N/A'}</div>
+              </div>
+              <div class="insight-mood" title="Mood: ${mood}">${moodEmoji}</div>
+            </div>
+
+            <div class="insight-stats">
+              <div class="insight-stat"><div class="val" style="color:${attColor};">${att}%</div><div class="lbl">Attention</div></div>
+              <div class="insight-stat"><div class="val" style="color:${engColor};">${eng}%</div><div class="lbl">Engagement</div></div>
+              <div class="insight-stat"><div class="val" style="color:var(--accent-amber);">✋ ${c.hand_raises || 0}</div><div class="lbl">Hand Raises</div></div>
+              <div class="insight-stat"><div class="val" style="color:var(--accent-blue);">💬 ${c.answers_given || 0}</div><div class="lbl">Answers</div></div>
+            </div>
+
+            <div class="engagement-bar"><div class="engagement-fill" style="width:${eng}%;background:${engColor};"></div></div>
+            <div class="engagement-label"><span>Engagement</span><span>${eng}%</span></div>
+
+            <div style="margin-top:8px;font-size:0.72rem;color:var(--text-muted);">
+              Feeling: <span style="font-size:0.9rem;">${moodEmoji}</span> <strong style="color:var(--text-primary);text-transform:capitalize;">${mood}</strong>
+              ${att >= 70 ? ' — <span style="color:var(--accent-emerald);">Great focus</span>' : att >= 40 ? ' — <span style="color:var(--accent-amber);">Needs engagement</span>' : ' — <span style="color:var(--accent-rose);">Losing interest</span>'}
+            </div>
+
+            <div class="insight-actions">
+              <button class="action-btn hand" onclick="logHandRaise('${c.uid}')">✋ Hand Raise</button>
+              <button class="action-btn answer" onclick="logAnswer('${c.uid}')">💬 Answer</button>
+            </div>
+          </div>`;
+        }).join('');
+
+        // Mood distribution summary
+        const moodCounts = {};
+        cards.forEach(c => { const m = c.mood || 'neutral'; moodCounts[m] = (moodCounts[m]||0) + 1; });
+        const moodSummary = Object.entries(moodCounts).map(([m, cnt]) => 
+          `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;background:rgba(255,255,255,0.05);border-radius:20px;font-size:0.8rem;">${moodEmojis[m]||'😐'} ${m} <strong>${cnt}</strong></span>`
+        ).join(' ');
+        
+        grid.innerHTML += `<div class="glass-card" style="grid-column:1/-1;margin-top:var(--space-md);">
+          <h4 style="margin:0 0 8px;">😊 Class Mood Distribution</h4>
+          <div style="display:flex;flex-wrap:wrap;gap:8px;">${moodSummary}</div>
+        </div>`;
+
+      } catch(e) { console.error(e); showToast('Error loading insights', 'error'); }
+    }
+
+    async function logHandRaise(uid) {
+      if (!currentSessionId) { showToast('Select a session first', 'error'); return; }
+      try {
+        await fetch(`${API}/engagement/hand-raise`, {method:'POST', headers, body: JSON.stringify({student_uid: uid, session_id: currentSessionId})});
+        showToast(`✋ Hand raise logged for ${uid}`, 'success');
+        loadInsights();
+      } catch(e) { showToast('Error', 'error'); }
+    }
+
+    async function logAnswer(uid) {
+      if (!currentSessionId) { showToast('Select a session first', 'error'); return; }
+      try {
+        await fetch(`${API}/engagement/answer`, {method:'POST', headers, body: JSON.stringify({student_uid: uid, session_id: currentSessionId})});
+        showToast(`💬 Answer logged for ${uid}`, 'success');
+        loadInsights();
+      } catch(e) { showToast('Error', 'error'); }
+    }
+
+    async function loadSubjectProgress() {
+      const grid = document.getElementById('subjectProgressGrid');
+      grid.innerHTML = '<div class="glass-card" style="grid-column:1/-1;text-align:center;"><div class="loader"></div><p style="color:var(--text-muted);">Loading progress...</p></div>';
+      try {
+        const r = await fetch(`${API}/engagement/student-progress`, {headers});
+        const d = await r.json();
+        if (!d.success || !d.progress.length) {
+          grid.innerHTML = '<div class="glass-card" style="grid-column:1/-1;"><p style="text-align:center;color:var(--text-muted);">No progress data yet. Data builds up across sessions.</p></div>';
+          return;
+        }
+        grid.innerHTML = d.progress.map((st, i) => {
+          const subjectBars = Object.entries(st.subjects).map(([subj, data]) => {
+            const ec = data.avg_engagement >= 70 ? 'var(--accent-emerald)' : data.avg_engagement >= 40 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+            const isFav = subj === st.favorite_subject;
+            const topMood = data.moods.length ? data.moods.sort((a,b) => data.moods.filter(v=>v===b).length - data.moods.filter(v=>v===a).length)[0] : 'neutral';
+            return `<div style="margin-bottom:10px;">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px;">
+                <span style="font-weight:600;font-size:0.85rem;">${isFav ? '⭐ ' : ''}${subj}</span>
+                <span style="font-size:0.7rem;color:var(--text-muted);">${data.sessions} sessions | ${moodEmojis[topMood]||'😐'} ${topMood}</span>
+              </div>
+              <div style="display:flex;gap:6px;align-items:center;">
+                <div style="flex:1;height:8px;background:rgba(255,255,255,0.08);border-radius:4px;overflow:hidden;">
+                  <div style="width:${data.avg_engagement}%;height:100%;background:${ec};border-radius:4px;transition:width 0.5s;"></div>
+                </div>
+                <span style="font-size:0.72rem;font-weight:700;color:${ec};min-width:35px;">${data.avg_engagement}%</span>
+              </div>
+              <div style="display:flex;gap:12px;font-size:0.68rem;color:var(--text-muted);margin-top:2px;">
+                <span>Attn: ${data.avg_attention}%</span>
+                <span>✋ ${data.total_hands}</span>
+                <span>💬 ${data.total_answers}</span>
+              </div>
+            </div>`;
+          }).join('');
+
+          // Mood distribution as mini badges
+          const moods = Object.entries(st.mood_distribution).sort((a,b) => b[1]-a[1]);
+          const moodBadges = moods.map(([m, cnt]) => `<span style="display:inline-flex;align-items:center;gap:3px;padding:2px 8px;background:rgba(255,255,255,0.05);border-radius:12px;font-size:0.7rem;">${moodEmojis[m]||'😐'}${cnt}</span>`).join('');
+
+          return `<div class="insight-card" style="animation:fadeInCard 0.3s ease ${i*0.06}s both;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <div class="avatar" style="width:44px;height:44px;font-size:1rem;">${(st.name||'?')[0]}</div>
+              <div style="flex:1;">
+                <div style="font-weight:700;">${st.name}</div>
+                <div style="font-size:0.72rem;color:var(--text-muted);">${st.uid} • ${st.section}</div>
+              </div>
+              <div style="text-align:right;">
+                <div style="font-size:0.65rem;color:var(--accent-emerald);font-weight:600;">⭐ FAVORITE</div>
+                <div style="font-weight:700;font-size:0.85rem;">${st.favorite_subject}</div>
+              </div>
+            </div>
+            ${subjectBars}
+            <div style="margin-top:8px;padding-top:8px;border-top:1px solid var(--border-subtle);">
+              <div style="font-size:0.7rem;color:var(--text-muted);margin-bottom:4px;">Mood History</div>
+              <div style="display:flex;flex-wrap:wrap;gap:4px;">${moodBadges}</div>
+            </div>
+          </div>`;
+        }).join('');
+      } catch(e) {
+        console.error(e);
+        grid.innerHTML = '<div class="glass-card" style="grid-column:1/-1;"><p style="color:var(--accent-rose);">Error loading progress data.</p></div>';
+      }
+    }
+
+    async function generateSuggestions() {
+      if (!currentSessionId) { showToast('Select a session first', 'error'); return; }
+      const btn = document.getElementById('genSuggestionsBtn');
+      const content = document.getElementById('suggestionsContent');
+      btn.disabled = true; btn.textContent = '⏳ Analyzing...';
+      content.innerHTML = '<div style="display:flex;align-items:center;gap:12px;padding:var(--space-md);"><div class="loader"></div><span style="color:var(--text-muted);">AI is analyzing engagement data...</span></div>';
+      
+      try {
+        const r = await fetch(`${API}/engagement/${currentSessionId}/ai-suggestions`, {headers});
+        const d = await r.json();
+        if (d.success && d.suggestions) {
+          // Simple markdown rendering
+          let html = d.suggestions
+            .replace(/\*\*(.*?)\*\*/g, '<strong style="color:var(--text-primary);display:block;margin-top:12px;font-size:1rem;">$1</strong>')
+            .replace(/^\d+\.\s(.+)$/gm, '<div style="padding:6px 0 6px 16px;border-left:2px solid var(--accent-indigo);">$1</div>')
+            .replace(/^-\s(.+)$/gm, '<div style="padding:4px 0 4px 12px;"><span style="color:var(--accent-purple);margin-right:6px;">•</span>$1</div>')
+            .replace(/\n/g, '<br>');
+          content.innerHTML = html;
+        } else {
+          content.innerHTML = `<p style="color:var(--accent-rose);">${d.message || 'Failed to generate'}</p>`;
+        }
+      } catch(e) {
+        content.innerHTML = '<p style="color:var(--accent-rose);">Error connecting to AI service.</p>';
+      }
+      btn.disabled = false; btn.textContent = '✨ Generate Suggestions';
+    }
+
+    // Show/hide AI panel when session is loaded
+    const origInsights = loadInsights;
+    loadInsights = async function() {
+      await origInsights.call(this);
+      const sid = document.getElementById('sessionSelect').value;
+      document.getElementById('aiSuggestionsPanel').style.display = sid ? 'block' : 'none';
+    };
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=teacher';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':'❌'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+
+    loadSessions();
+    
+    // Auto-refresh for live sessions every 10 seconds
+    let autoRefreshTimer = null;
+    const origLoadInsights2 = loadInsights;
+    loadInsights = async function() {
+      await origLoadInsights2();
+      const sel = document.getElementById('sessionSelect');
+      const opt = sel.options[sel.selectedIndex];
+      if (opt && opt.textContent.includes('LIVE')) {
+        document.getElementById('autoRefreshBadge').style.display = '';
+        if (!autoRefreshTimer) {
+          autoRefreshTimer = setInterval(() => loadInsights(), 10000);
+        }
+      } else {
+        document.getElementById('autoRefreshBadge').style.display = 'none';
+        if (autoRefreshTimer) { clearInterval(autoRefreshTimer); autoRefreshTimer = null; }
+      }
+    };
+  </script>
+
+<!-- Floating AI Copilot Button -->
+<a href="chatbot.html" class="fab-chat" id="fabChat" title="AI Copilot">
+  <i class="fas fa-robot"></i>
+  <span class="fab-pulse"></span>
+</a>
+<style>
+  .fab-chat { position:fixed; bottom:28px; right:28px; z-index:999; width:56px; height:56px; border-radius:50%; background:linear-gradient(135deg,#6366f1,#8b5cf6); color:#fff; display:flex; align-items:center; justify-content:center; font-size:1.4rem; cursor:pointer; text-decoration:none; box-shadow:0 6px 24px rgba(99,102,241,0.4); transition:all 0.3s cubic-bezier(0.4,0,0.2,1); animation:fabBounceIn 0.6s ease 1s both; }
+  .fab-chat:hover { transform:scale(1.12) translateY(-2px); box-shadow:0 8px 32px rgba(99,102,241,0.5); }
+  .fab-pulse { position:absolute; inset:-4px; border-radius:50%; border:2px solid rgba(99,102,241,0.5); animation:fabPulse 2s ease-in-out infinite; }
+  @keyframes fabPulse { 0%,100%{transform:scale(1);opacity:1;} 50%{transform:scale(1.2);opacity:0;} }
+  @keyframes fabBounceIn { 0%{opacity:0;transform:scale(0) translateY(40px);} 60%{transform:scale(1.15) translateY(-4px);} 100%{opacity:1;transform:scale(1) translateY(0);} }
+</style>
+
+</body>
+</html>

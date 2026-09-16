@@ -1,0 +1,162 @@
+/* ===== AttendAI — Shared Components ===== */
+
+/* ── Theme Toggle Button ── */
+.theme-toggle {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px; border-radius: var(--radius-md);
+  cursor: pointer; font-size: 0.85rem;
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  color: var(--text-secondary); transition: var(--transition-base);
+  margin: 8px 12px;
+}
+.theme-toggle:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.theme-toggle .toggle-icon { font-size: 1.1rem; transition: transform 0.3s ease; }
+.theme-toggle:hover .toggle-icon { transform: rotate(30deg); }
+
+/* ── Modal Dialog ── */
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(0,0,0,0.6);
+  backdrop-filter: blur(4px); z-index: 1000;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; pointer-events: none; transition: opacity 0.25s ease;
+}
+.modal-overlay.active { opacity: 1; pointer-events: auto; }
+.modal {
+  background: var(--bg-secondary); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: var(--space-xl);
+  max-width: 500px; width: 90%; max-height: 85vh; overflow-y: auto;
+  box-shadow: var(--shadow-lg); transform: translateY(20px);
+  transition: transform 0.3s ease;
+}
+.modal-overlay.active .modal { transform: translateY(0); }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: var(--space-lg); }
+.modal-header h3 { font-size: 1.15rem; }
+.modal-close { background: none; border: none; color: var(--text-muted); cursor: pointer; font-size: 1.3rem; padding: 4px; }
+.modal-close:hover { color: var(--accent-rose); }
+
+/* ── Progress Ring ── */
+.progress-ring { display: inline-flex; align-items: center; justify-content: center; position: relative; }
+.progress-ring svg { transform: rotate(-90deg); }
+.progress-ring circle { fill: none; stroke-width: 6; stroke-linecap: round; transition: stroke-dashoffset 0.6s ease; }
+.progress-ring .bg { stroke: var(--border-subtle); }
+.progress-ring .fg { stroke: var(--accent-emerald); }
+.progress-ring .ring-label {
+  position: absolute; font-size: 1.1rem; font-weight: 700; color: var(--text-primary);
+}
+
+/* ── File Upload Dropzone ── */
+.dropzone {
+  border: 2px dashed var(--border-light); border-radius: var(--radius-lg);
+  padding: var(--space-2xl); text-align: center;
+  cursor: pointer; transition: var(--transition-base);
+  background: var(--bg-card);
+}
+.dropzone:hover, .dropzone.dragover {
+  border-color: var(--accent-blue); background: rgba(59,130,246,0.05);
+}
+.dropzone .dropzone-icon { font-size: 2.5rem; margin-bottom: var(--space-md); }
+.dropzone .dropzone-text { color: var(--text-muted); font-size: 0.9rem; }
+.dropzone .dropzone-text strong { color: var(--accent-blue); }
+
+/* ── Calendar Grid ── */
+.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+.calendar-header { text-align: center; font-weight: 600; font-size: 0.7rem; color: var(--text-muted); padding: 8px 0; text-transform: uppercase; }
+.calendar-day {
+  aspect-ratio: 1; display: flex; align-items: center; justify-content: center;
+  border-radius: var(--radius-md); font-size: 0.8rem; font-weight: 500;
+  cursor: pointer; transition: var(--transition-fast);
+  border: 1px solid transparent;
+}
+.calendar-day:hover { background: var(--bg-card-hover); }
+.calendar-day.present { background: rgba(16,185,129,0.15); color: var(--accent-emerald); border-color: rgba(16,185,129,0.3); }
+.calendar-day.absent { background: rgba(244,63,94,0.15); color: var(--accent-rose); border-color: rgba(244,63,94,0.3); }
+.calendar-day.no-class { color: var(--text-muted); opacity: 0.4; }
+.calendar-day.today { border-color: var(--accent-blue); font-weight: 700; }
+
+/* ── Chips / Tags ── */
+.chip {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 10px; border-radius: var(--radius-full);
+  font-size: 0.7rem; font-weight: 600;
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  color: var(--text-secondary);
+}
+.chip-success { background: rgba(16,185,129,0.12); color: var(--accent-emerald); border-color: rgba(16,185,129,0.2); }
+.chip-danger { background: rgba(244,63,94,0.12); color: var(--accent-rose); border-color: rgba(244,63,94,0.2); }
+.chip-warning { background: rgba(245,158,11,0.12); color: var(--accent-amber); border-color: rgba(245,158,11,0.2); }
+.chip-info { background: rgba(59,130,246,0.12); color: var(--accent-blue); border-color: rgba(59,130,246,0.2); }
+
+/* ── Search Bar ── */
+.search-bar {
+  position: relative; display: flex; align-items: center;
+}
+.search-bar input {
+  width: 100%; padding: 10px 16px 10px 40px;
+  background: var(--bg-input); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-full); color: var(--text-primary);
+  font-size: 0.9rem; transition: var(--transition-base);
+}
+.search-bar input:focus { border-color: var(--accent-blue); outline: none; }
+.search-bar .search-icon {
+  position: absolute; left: 14px; color: var(--text-muted); font-size: 0.9rem;
+}
+
+/* ── Progress Bar ── */
+.progress-bar {
+  height: 6px; border-radius: var(--radius-full);
+  background: var(--border-subtle); overflow: hidden;
+}
+.progress-bar .progress-fill {
+  height: 100%; border-radius: var(--radius-full);
+  background: var(--gradient-blue);
+  transition: width 0.4s ease;
+}
+
+/* ── Animation Utilities ── */
+.fade-in { animation: fadeIn 0.4s ease both; }
+.fade-in-up { animation: fadeInUp 0.5s ease both; }
+.slide-in-right { animation: slideInRight 0.4s ease both; }
+
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes fadeInUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes slideInRight { from { opacity: 0; transform: translateX(20px); } to { opacity: 1; transform: translateX(0); } }
+
+/* Stagger delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+
+/* ── Loading Skeleton ── */
+.skeleton {
+  background: linear-gradient(90deg, var(--bg-card) 25%, var(--bg-card-hover) 50%, var(--bg-card) 75%);
+  background-size: 200% 100%; animation: shimmer 1.5s infinite;
+  border-radius: var(--radius-md); min-height: 20px;
+}
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+
+/* ── Tooltip ── */
+[data-tooltip] { position: relative; }
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute; bottom: calc(100% + 8px); left: 50%; transform: translateX(-50%);
+  background: var(--bg-secondary); color: var(--text-primary);
+  padding: 4px 10px; border-radius: var(--radius-sm);
+  font-size: 0.75rem; white-space: nowrap;
+  box-shadow: var(--shadow-md); border: 1px solid var(--border-subtle);
+  z-index: 100; animation: fadeIn 0.15s ease;
+}
+
+/* ── Surface Card with hover ── */
+.surface-card {
+  background: var(--bg-card); border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg); padding: var(--space-lg);
+  transition: var(--transition-base);
+}
+.surface-card:hover {
+  background: var(--bg-card-hover);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}

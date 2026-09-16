@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Exams — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <link rel="stylesheet" href="../css/exam.css">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <script src="../js/theme.js"></script>
+</head>
+<body>
+
+  <!-- Sidebar (shown only on exam list, hidden during exam) -->
+  <aside class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div>
+      <span class="brand-text">AttendAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Attendance</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item active" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="profile.html"><span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profile</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;">
+        <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <!-- Main: Exam List View -->
+  <main class="main-content" id="examListView">
+    <div class="top-bar">
+      <div>
+        <h1><i class="fas fa-clipboard-check" style="color:var(--accent-indigo);margin-right:10px;"></i>My Exams</h1>
+        <p class="text-muted text-sm">Take AI-proctored exams assigned by your teachers</p>
+      </div>
+      <div class="top-bar-actions"><div class="avatar" id="userAvatar">S</div></div>
+    </div>
+    <div id="availableExams">
+      <div class="empty-state" style="padding:var(--space-3xl);"><div class="empty-icon"><i class="fas fa-clipboard-list" style="font-size:2.5rem;opacity:0.4;"></i></div>
+        <h3>No exams available</h3><p>Your teachers haven't published any exams yet</p></div>
+    </div>
+    <!-- Completed exams section -->
+    <div id="completedSection" style="display:none;margin-top:var(--space-xl);">
+      <h2 style="margin-bottom:var(--space-md);font-size:1.1rem;"><i class="fas fa-check-circle" style="color:var(--accent-emerald);margin-right:8px;"></i>Completed Exams</h2>
+      <div id="completedExams"></div>
+    </div>
+  </main>
+
+  <!-- Exam Taking View (hidden by default) -->
+  <div id="examTakingView" style="display:none;">
+    <!-- Timer Bar -->
+    <div class="exam-timer-bar">
+      <div style="display:flex;align-items:center;gap:16px;">
+        <div style="font-weight:700;font-size:0.95rem;"><i class="fas fa-clipboard-check" style="color:var(--accent-indigo);margin-right:6px;"></i><span id="examTitleBar">Exam</span></div>
+      </div>
+      <div class="exam-timer" id="timerDisplay"><i class="fas fa-clock"></i> <span id="timerText">00:00</span></div>
+      <div><button class="btn btn-danger btn-sm" onclick="confirmSubmit()"><i class="fas fa-paper-plane"></i> Submit</button></div>
+      <div class="timer-progress" id="timerProgress"></div>
+    </div>
+
+    <!-- Exam Content -->
+    <div class="exam-content">
+      <div class="exam-progress" id="progressDots"></div>
+      <div id="questionArea"></div>
+      <div class="exam-nav">
+        <span class="question-counter" id="qCounter">Question 1 of 10</span>
+        <div style="display:flex;gap:var(--space-sm);">
+          <button class="btn btn-primary" id="btnNext" onclick="nextQuestion()">Next <i class="fas fa-arrow-right"></i></button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Proctor Camera -->
+    <div class="proctor-cam" id="proctorCam">
+      <video id="proctorVideo" autoplay muted playsinline></video>
+      <div class="cam-status"><span class="cam-dot"></span> AI Monitoring</div>
+    </div>
+  </div>
+
+  <!-- Proctor Alert -->
+  <div id="proctorAlert" style="display:none;" class="proctor-alert">
+    <i class="fas fa-exclamation-triangle"></i> <span id="alertMsg">Warning: Please look at the screen</span>
+  </div>
+
+  <!-- Result Screen -->
+  <div id="examResultView" style="display:none;">
+    <div class="exam-result-card">
+      <div style="font-size:3rem;margin-bottom:var(--space-md);">🎯</div>
+      <h2>Exam Completed!</h2>
+      <p class="text-muted" style="margin-bottom:var(--space-xl);">Your answers have been submitted</p>
+      <div class="score-circle">
+        <svg width="140" height="140"><circle cx="70" cy="70" r="60" fill="none" stroke="var(--border-subtle)" stroke-width="8"/>
+          <circle cx="70" cy="70" r="60" fill="none" stroke="var(--accent-emerald)" stroke-width="8" stroke-dasharray="377" stroke-dashoffset="377" stroke-linecap="round" id="scoreRing"/></svg>
+        <span class="score-text" id="scoreDisplay">0%</span>
+      </div>
+      <div style="display:flex;justify-content:center;gap:var(--space-xl);margin:var(--space-xl) 0;">
+        <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-emerald);" id="correctCount">0</div><div class="text-muted text-sm">Correct</div></div>
+        <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-rose);" id="wrongCount">0</div><div class="text-muted text-sm">Wrong</div></div>
+        <div><div style="font-size:1.5rem;font-weight:800;color:var(--accent-blue);" id="totalCount">0</div><div class="text-muted text-sm">Total</div></div>
+      </div>
+      <a href="exams.html" class="btn btn-primary"><i class="fas fa-arrow-left"></i> Back to Exams</a>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+  const API = 'http://localhost:5000/api';
+  const token = localStorage.getItem('token');
+  const user = JSON.parse(localStorage.getItem('user') || '{}');
+  if (!token || !user.uid) window.location.href = '../login.html?role=student';
+  const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+  document.getElementById('userAvatar').textContent = (user.name||'S')[0].toUpperCase();
+
+  function logout() { localStorage.clear(); window.location.href = '../login.html?role=student'; }
+  function showToast(msg, type='info') {
+    const c = document.getElementById('toastContainer'), t = document.createElement('div');
+    t.className = `toast ${type}`;
+    t.innerHTML = `<span><i class="fas ${type==='success'?'fa-check-circle':'fa-exclamation-circle'}"></i></span><span style="flex:1;font-size:0.9rem;">${msg}</span>`;
+    c.appendChild(t); setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 4000);
+  }
+
+  /* ── Load Available Exams ── */
+  async function loadExams() {
+    try {
+      const res = await fetch(`${API}/exams/available`, { headers });
+      const data = await res.json();
+      if (!data.success) return;
+      const available = (data.exams || []).filter(e => e.status !== 'submitted');
+      const completed = (data.exams || []).filter(e => e.status === 'submitted');
+      if (available.length) {
+        document.getElementById('availableExams').innerHTML = available.map(e => `
+          <div class="available-exam-card animate-fadeInUp">
+            <div class="exam-info">
+              <div class="exam-title">${e.title}</div>
+              <div class="exam-details">
+                <span><i class="fas fa-book"></i> ${e.subject}</span>
+                <span><i class="fas fa-clock"></i> ${e.duration_min} min</span>
+                <span><i class="fas fa-list"></i> ${e.num_questions} MCQs</span>
+                <span><i class="fas fa-signal"></i> ${e.difficulty}</span>
+              </div>
+            </div>
+            <button class="btn btn-primary" onclick="startExam('${e.id}')"><i class="fas fa-play"></i> Start Exam</button>
+          </div>`).join('');
+      }
+      if (completed.length) {
+        document.getElementById('completedSection').style.display = 'block';
+        document.getElementById('completedExams').innerHTML = completed.map(e => `
+          <div class="available-exam-card" style="opacity:0.7;">
+            <div class="exam-info">
+              <div class="exam-title">${e.title}</div>
+              <div class="exam-details">
+                <span><i class="fas fa-book"></i> ${e.subject}</span>
+                <span><i class="fas fa-check-circle" style="color:var(--accent-emerald);"></i> Score: ${e.score}/${e.total} (${Math.round(e.percentage || 0)}%)</span>
+              </div>
+            </div>
+            <span class="badge badge-green">Completed</span>
+          </div>`).join('');
+      }
+    } catch(e) { console.error(e); }
+  }
+
+  /* ── Exam State ── */
+  let examData = null, questions = [], currentQ = 0, answers = {}, examStartTime = 0;
+  let timerInterval = null, remainingSeconds = 0, totalDuration = 0;
+  // Proctoring state — STRICT MODE
+  let proctorLog = { headTurns: 0, eyeAlerts: 0, tabSwitches: 0, faceNotVisible: 0, lipMovements: 0, windowBlurs: 0, totalWarnings: 0, alerts: [] };
+  let proctorStream = null, faceCheckInterval = null, lipCheckInterval = null;
+  let _prevBrightness = null, _prevLipHash = null, _prevFrameData = null;
+  let _warningCount = 0; // escalating warnings
+
+  /* ── Start Exam ── */
+  async function startExam(examId) {
+    try {
+      const res = await fetch(`${API}/exams/${examId}`, { headers });
+      const data = await res.json();
+      if (!data.success) { showToast(data.message || 'Cannot load exam', 'error'); return; }
+      examData = data.exam;
+      questions = data.questions || [];
+      if (!questions.length) { showToast('No questions found', 'error'); return; }
+
+      // Reset state
+      currentQ = 0; answers = {};
+      proctorLog = { headTurns: 0, eyeAlerts: 0, tabSwitches: 0, faceNotVisible: 0, lipMovements: 0, windowBlurs: 0, totalWarnings: 0, alerts: [] };
+      _prevBrightness = null; _prevLipHash = null; _prevFrameData = null; _warningCount = 0;
+      totalDuration = examData.duration_min * 60; remainingSeconds = totalDuration;
+      examStartTime = Date.now();
+
+      // Switch to exam view
+      document.getElementById('examListView').style.display = 'none';
+      document.getElementById('sidebar').style.display = 'none';
+      document.getElementById('examTakingView').style.display = 'block';
+      document.getElementById('examTitleBar').textContent = examData.title;
+
+      renderProgressDots();
+      renderQuestion();
+      startTimer();
+      startProctoring();
+    } catch(e) { showToast('Error loading exam', 'error'); console.error(e); }
+  }
+
+  /* ── Timer ── */
+  function startTimer() {
+    updateTimerDisplay();
+    timerInterval = setInterval(() => {
+      remainingSeconds--;
+      updateTimerDisplay();
+      if (remainingSeconds <= 0) { clearInterval(timerInterval); autoSubmit(); }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const min = Math.floor(remainingSeconds / 60), sec = remainingSeconds % 60;
+    document.getElementById('timerText').textContent = `${String(min).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+    const pct = ((totalDuration - remainingSeconds) / totalDuration) * 100;
+    document.getElementById('timerProgress').style.width = pct + '%';
+    const td = document.getElementById('timerDisplay');
+    const tp = document.getElementById('timerProgress');
+    td.className = 'exam-timer'; tp.className = 'timer-progress';
+    if (remainingSeconds <= 60) { td.classList.add('critical'); tp.classList.add('critical'); }
+    else if (remainingSeconds <= 300) { td.classList.add('warning'); tp.classList.add('warning'); }
+  }
+
+  /* ── Render Question ── */
+  function renderProgressDots() {
+    document.getElementById('progressDots').innerHTML = questions.map((_, i) =>
+      `<div class="progress-dot ${i === currentQ ? 'current' : ''} ${answers[i] !== undefined ? 'answered' : ''}"></div>`
+    ).join('');
+  }
+
+  function renderQuestion() {
+    const q = questions[currentQ];
+    const selected = answers[currentQ];
+    document.getElementById('qCounter').textContent = `Question ${currentQ + 1} of ${questions.length}`;
+    document.getElementById('btnNext').innerHTML = currentQ === questions.length - 1 ? 'Submit <i class="fas fa-paper-plane"></i>' : 'Next <i class="fas fa-arrow-right"></i>';
+    document.getElementById('questionArea').innerHTML = `
+      <div class="exam-question-card">
+        <div class="exam-question-num">${currentQ + 1}</div>
+        <div class="exam-question-text">${q.question_text || q.question}</div>
+        <div class="mcq-options">
+          ${['A','B','C','D'].map(opt => {
+            const text = q['option_' + opt.toLowerCase()];
+            const sel = selected === opt ? 'selected' : '';
+            return `<div class="mcq-option ${sel}" onclick="selectOption('${opt}')">
+              <span class="option-letter">${opt}</span>
+              <span class="option-text">${text}</span>
+            </div>`;
+          }).join('')}
+        </div>
+      </div>`;
+    renderProgressDots();
+  }
+
+  function selectOption(opt) {
+    answers[currentQ] = opt;
+    renderQuestion();
+  }
+
+  function nextQuestion() {
+    if (answers[currentQ] === undefined) { showToast('Please select an answer', 'warning'); return; }
+    if (currentQ === questions.length - 1) { confirmSubmit(); return; }
+    currentQ++;
+    renderQuestion();
+  }
+
+  function confirmSubmit() {
+    const unanswered = questions.length - Object.keys(answers).length;
+    const msg = unanswered > 0 ? `You have ${unanswered} unanswered question(s). Submit anyway?` : 'Are you sure you want to submit?';
+    if (confirm(msg)) submitExam();
+  }
+
+  function autoSubmit() { showToast('Time is up! Auto-submitting...', 'warning'); setTimeout(() => submitExam(), 1000); }
+
+  /* ── Submit Exam ── */
+  async function submitExam() {
+    clearInterval(timerInterval);
+    stopProctoring();
+    const timeTaken = Math.round((Date.now() - examStartTime) / 1000);
+    try {
+      const res = await fetch(`${API}/exams/${examData.id}/submit`, {
+        method: 'POST', headers,
+        body: JSON.stringify({ answers, time_taken_sec: timeTaken, proctor_summary: proctorLog })
+      });
+      const data = await res.json();
+      document.getElementById('examTakingView').style.display = 'none';
+      document.getElementById('examResultView').style.display = 'block';
+      if (data.success) {
+        const pct = Math.round(data.percentage || 0);
+        document.getElementById('scoreDisplay').textContent = pct + '%';
+        document.getElementById('correctCount').textContent = data.score || 0;
+        document.getElementById('wrongCount').textContent = (data.total || 0) - (data.score || 0);
+        document.getElementById('totalCount').textContent = data.total || 0;
+        const ring = document.getElementById('scoreRing');
+        const circ = 2 * Math.PI * 60;
+        ring.style.transition = 'stroke-dashoffset 1.5s ease';
+        ring.style.strokeDashoffset = circ - (pct / 100) * circ;
+        if (pct < 40) ring.style.stroke = 'var(--accent-rose)';
+        else if (pct < 70) ring.style.stroke = 'var(--accent-amber)';
+      } else { showToast(data.message || 'Submission error', 'error'); }
+    } catch(e) { showToast('Network error', 'error'); console.error(e); }
+  }
+
+  /* ── AI Proctoring — STRICT MODE ── */
+  function getTimeElapsed() {
+    const sec = Math.round((Date.now() - examStartTime) / 1000);
+    const m = Math.floor(sec / 60), s = sec % 60;
+    return `${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`;
+  }
+
+  function logViolation(type, detail) {
+    proctorLog.alerts.push({ type, time: Date.now(), elapsed: getTimeElapsed(), q: currentQ + 1, detail: detail || '' });
+    proctorLog.totalWarnings++;
+    _warningCount++;
+  }
+
+  async function startProctoring() {
+    try {
+      proctorStream = await navigator.mediaDevices.getUserMedia({ video: { width: 320, height: 240, facingMode: 'user' }, audio: false });
+      document.getElementById('proctorVideo').srcObject = proctorStream;
+
+      // Tab switch detection
+      document.addEventListener('visibilitychange', onTabSwitch);
+      window.addEventListener('blur', onWindowBlur);
+
+      // Block right-click, copy, paste, print screen
+      document.addEventListener('contextmenu', blockAction);
+      document.addEventListener('copy', blockAction);
+      document.addEventListener('paste', blockAction);
+      document.addEventListener('cut', blockAction);
+      document.addEventListener('keydown', onKeyBlock);
+
+      // Face + head + eye check every 1.5 seconds (strict)
+      faceCheckInterval = setInterval(checkFacePosition, 1500);
+      // Lip movement check every 2 seconds
+      lipCheckInterval = setInterval(checkLipMovement, 2000);
+    } catch(e) {
+      console.warn('Camera denied:', e);
+      showProctorAlert('🚨 CAMERA REQUIRED! Exam cannot proceed without camera.', true);
+    }
+  }
+
+  function stopProctoring() {
+    if (proctorStream) { proctorStream.getTracks().forEach(t => t.stop()); proctorStream = null; }
+    if (faceCheckInterval) clearInterval(faceCheckInterval);
+    if (lipCheckInterval) clearInterval(lipCheckInterval);
+    document.removeEventListener('visibilitychange', onTabSwitch);
+    window.removeEventListener('blur', onWindowBlur);
+    document.removeEventListener('contextmenu', blockAction);
+    document.removeEventListener('copy', blockAction);
+    document.removeEventListener('paste', blockAction);
+    document.removeEventListener('cut', blockAction);
+    document.removeEventListener('keydown', onKeyBlock);
+  }
+
+  function blockAction(e) {
+    e.preventDefault();
+    proctorLog.tabSwitches++;
+    logViolation('blocked_action', e.type);
+    showProctorAlert(`🚫 ${e.type.toUpperCase()} is BLOCKED during exam!`, true);
+  }
+
+  function onKeyBlock(e) {
+    // Block Ctrl+C, Ctrl+V, Ctrl+A, PrintScreen, Alt+Tab hint
+    if ((e.ctrlKey && ['c','v','a','p','u'].includes(e.key.toLowerCase())) || e.key === 'PrintScreen' || e.key === 'F12') {
+      e.preventDefault();
+      logViolation('blocked_key', `Key: ${e.key}`);
+      showProctorAlert('🚫 Keyboard shortcut BLOCKED! This is recorded.', true);
+    }
+  }
+
+  function onTabSwitch() {
+    if (document.hidden) {
+      proctorLog.tabSwitches++;
+      logViolation('tab_switch', 'Student switched to another tab');
+      showProctorAlert('🚨 TAB SWITCH DETECTED! You left the exam window. This is a SERIOUS violation.', true);
+    }
+  }
+
+  function onWindowBlur() {
+    proctorLog.windowBlurs++;
+    logViolation('window_blur', 'Window lost focus');
+    showProctorAlert('⚠️ WINDOW FOCUS LOST! Stay on the exam window at all times.', true);
+  }
+
+  function getFrameData() {
+    if (!proctorStream) return null;
+    const video = document.getElementById('proctorVideo');
+    const canvas = document.createElement('canvas');
+    canvas.width = 320; canvas.height = 240;
+    const ctx = canvas.getContext('2d');
+    ctx.drawImage(video, 0, 0, 320, 240);
+    try { return ctx.getImageData(0, 0, 320, 240); } catch(e) { return null; }
+  }
+
+  function isSkinPixel(r, g, b) {
+    return r > 60 && g > 40 && b > 20 && r > g && r > b && Math.abs(r - g) > 15 && (r - b) > 15;
+  }
+
+  function checkFacePosition() {
+    const imageData = getFrameData();
+    if (!imageData) return;
+    const data = imageData.data;
+    const cam = document.getElementById('proctorCam');
+
+    // ── 1. FACE PRESENCE CHECK ──
+    let skinPixels = 0, totalChecked = 0;
+    for (let y = 30; y < 210; y += 3) {
+      for (let x = 50; x < 270; x += 3) {
+        const idx = (y * 320 + x) * 4;
+        totalChecked++;
+        if (isSkinPixel(data[idx], data[idx+1], data[idx+2])) skinPixels++;
+      }
+    }
+    const skinRatio = skinPixels / totalChecked;
+
+    if (skinRatio < 0.06) {
+      proctorLog.faceNotVisible++;
+      cam.classList.add('alert-state');
+      logViolation('face_not_visible', `Face missing (skin ratio: ${(skinRatio*100).toFixed(1)}%)`);
+      showProctorAlert('🚨 FACE NOT DETECTED! Show your face to the camera immediately!', true);
+      return;
+    }
+    cam.classList.remove('alert-state');
+
+    // ── 2. HEAD TURN DETECTION (stricter: ratio > 2.0 or < 0.5) ──
+    let leftSkin = 0, rightSkin = 0;
+    for (let y = 30; y < 200; y += 3) {
+      for (let x = 50; x < 160; x += 3) {
+        const idx = (y * 320 + x) * 4;
+        if (isSkinPixel(data[idx], data[idx+1], data[idx+2])) leftSkin++;
+      }
+      for (let x = 160; x < 270; x += 3) {
+        const idx = (y * 320 + x) * 4;
+        if (isSkinPixel(data[idx], data[idx+1], data[idx+2])) rightSkin++;
+      }
+    }
+    const lrRatio = leftSkin / (rightSkin + 1);
+    if (lrRatio > 2.0 || lrRatio < 0.5) {
+      proctorLog.headTurns++;
+      const dir = lrRatio > 2.0 ? 'RIGHT' : 'LEFT';
+      logViolation('head_turn', `Head turned ${dir} (ratio: ${lrRatio.toFixed(2)})`);
+      showProctorAlert(`⚠️ HEAD TURN (${dir}) DETECTED! Face the screen directly.`, false);
+    }
+
+    // ── 3. EYE MOVEMENT (upper face brightness delta, stricter threshold: 25) ──
+    let eyeBrightness = 0, eyeCount = 0;
+    for (let y = 60; y < 130; y += 2) {
+      for (let x = 90; x < 230; x += 2) {
+        const idx = (y * 320 + x) * 4;
+        eyeBrightness += (data[idx] + data[idx+1] + data[idx+2]) / 3;
+        eyeCount++;
+      }
+    }
+    const avgEyeBrightness = eyeBrightness / eyeCount;
+    if (_prevBrightness !== null && Math.abs(avgEyeBrightness - _prevBrightness) > 25) {
+      proctorLog.eyeAlerts++;
+      logViolation('eye_movement', `Rapid eye shift (delta: ${Math.abs(avgEyeBrightness - _prevBrightness).toFixed(1)})`);
+      if (proctorLog.eyeAlerts % 2 === 0) {
+        showProctorAlert('👁️ SUSPICIOUS EYE MOVEMENT detected! Keep eyes on screen.', false);
+      }
+    }
+    _prevBrightness = avgEyeBrightness;
+
+    // ── 4. UPPER BODY MOVEMENT (large frame diff = looking away) ──
+    if (_prevFrameData) {
+      let diffSum = 0, diffCount = 0;
+      for (let i = 0; i < data.length; i += 16) {
+        diffSum += Math.abs(data[i] - _prevFrameData[i]);
+        diffCount++;
+      }
+      const avgDiff = diffSum / diffCount;
+      if (avgDiff > 35) {
+        logViolation('large_movement', `Sudden body movement (delta: ${avgDiff.toFixed(1)})`);
+      }
+    }
+    _prevFrameData = new Uint8ClampedArray(data);
+  }
+
+  // ── 5. LIP MOVEMENT DETECTION ──
+  function checkLipMovement() {
+    const imageData = getFrameData();
+    if (!imageData) return;
+    const data = imageData.data;
+
+    // Sample lower face region (mouth area: y=150-210, x=100-220)
+    let lipHash = 0;
+    for (let y = 150; y < 210; y += 2) {
+      for (let x = 100; x < 220; x += 2) {
+        const idx = (y * 320 + x) * 4;
+        // Detect reddish lip pixels (lips are redder than surrounding skin)
+        const r = data[idx], g = data[idx+1], b = data[idx+2];
+        const isLipish = r > 80 && (r - g) > 10 && (r - b) > 5;
+        lipHash += isLipish ? r + g : b;
+      }
+    }
+
+    if (_prevLipHash !== null) {
+      const lipDelta = Math.abs(lipHash - _prevLipHash);
+      if (lipDelta > 8000) {
+        proctorLog.lipMovements++;
+        logViolation('lip_movement', `Lip/mouth movement detected (delta: ${lipDelta})`);
+        if (proctorLog.lipMovements % 3 === 0) {
+          showProctorAlert('🗣️ LIP MOVEMENT DETECTED! No talking allowed during exam.', true);
+        }
+      }
+    }
+    _prevLipHash = lipHash;
+  }
+
+  function showProctorAlert(msg, isSevere) {
+    const el = document.getElementById('proctorAlert');
+    document.getElementById('alertMsg').textContent = msg;
+    el.style.display = 'flex';
+    el.className = 'proctor-alert';
+    if (isSevere) el.style.background = 'linear-gradient(135deg, #dc2626, #b91c1c)';
+    else el.style.background = 'linear-gradient(135deg, #f59e0b, #d97706)';
+
+    // Escalating duration: more warnings = longer alert
+    const duration = Math.min(5000, 2500 + (_warningCount * 200));
+    setTimeout(() => { el.classList.add('fade-out'); setTimeout(() => el.style.display = 'none', 400); }, duration);
+  }
+
+  // Init
+  loadExams();
+  </script>
+</body>
+</html>

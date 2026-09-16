@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reports — AttendAI Admin</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:var(--gradient-rose);">🎯</div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item" href="users.html"><span class="nav-icon">👥</span> Users</a>
+      <a class="nav-item" href="sections.html"><span class="nav-icon">🏫</span> Sections</a>
+      <a class="nav-item active" href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>📈 System-Wide Reports</h1>
+      <button class="btn btn-success btn-sm" onclick="exportCSV()">📥 Export CSV</button>
+    </div>
+
+    <!-- Filters -->
+    <div class="glass-card" style="margin-bottom:var(--space-xl);">
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr auto;gap:var(--space-md);align-items:end;">
+        <div class="form-group"><label class="form-label">Section</label><input class="form-input" id="fSection" placeholder="All sections"></div>
+        <div class="form-group"><label class="form-label">Subject</label><input class="form-input" id="fSubject" placeholder="All subjects"></div>
+        <div class="form-group"><label class="form-label">From</label><input type="date" class="form-input" id="fFrom"></div>
+        <div class="form-group"><label class="form-label">To</label><input type="date" class="form-input" id="fTo"></div>
+        <button class="btn btn-primary" onclick="loadReport()" style="height:46px;">🔍 Filter</button>
+      </div>
+    </div>
+
+    <!-- Stats -->
+    <div class="dashboard-grid" style="margin-bottom:var(--space-xl);">
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(59,130,246,0.12);color:var(--accent-blue);"><i class="fas fa-clipboard-list"></i></div><div class="stat-value" id="sumTotal">0</div><div class="stat-label">Records</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);">👥</div><div class="stat-value" id="sumStudents">0</div><div class="stat-label">Students</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(16,185,129,0.12);color:var(--accent-emerald);">✅</div><div class="stat-value" id="sumPresent">0</div><div class="stat-label">Present</div></div>
+      <div class="stat-card"><div class="stat-icon" style="background:rgba(244,63,94,0.12);color:var(--accent-rose);">❌</div><div class="stat-value" id="sumAbsent">0</div><div class="stat-label">Absent</div></div>
+    </div>
+
+    <!-- Table -->
+    <div class="glass-card">
+      <div class="section-header"><h2>Records</h2><span class="text-muted text-sm" id="recordCount">0</span></div>
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead><tr><th>UID</th><th>Subject</th><th>Section</th><th>Date</th><th>Duration</th><th>Present</th><th>%</th><th>Status</th></tr></thead>
+          <tbody id="tbody"><tr><td colspan="8" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">Apply filters</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=admin';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+
+    async function loadReport(){
+      let url=`${API}/attendance/report?`;
+      ['fSection:section','fSubject:subject','fFrom:from','fTo:to'].forEach(p=>{const[id,k]=p.split(':');const v=document.getElementById(id).value.trim();if(v)url+=`${k}=${encodeURIComponent(v)}&`;});
+      try{const r=await fetch(url,{headers});const d=await r.json();if(!d.success)return;
+        const{records,summary}=d;
+        document.getElementById('sumTotal').textContent=summary.total_records;
+        document.getElementById('sumStudents').textContent=summary.unique_students;
+        document.getElementById('sumPresent').textContent=summary.present;
+        document.getElementById('sumAbsent').textContent=summary.absent;
+        document.getElementById('recordCount').textContent=records.length+' records';
+        if(records.length>0){
+          document.getElementById('tbody').innerHTML=records.map(r=>`<tr>
+            <td class="font-semibold">${r.student_uid}</td><td>${r.subject||'—'}</td>
+            <td><span class="badge badge-blue">${r.section||'—'}</span></td><td>${r.date}</td>
+            <td>${r.class_duration_min||0}m</td><td>${r.present_duration_min||0}m</td>
+            <td>${Math.round(r.presence_percentage||0)}%</td>
+            <td><span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status}</span></td>
+          </tr>`).join('');
+        }
+      }catch(e){console.error(e);}
+    }
+
+    function exportCSV(){
+      let url=`${API}/attendance/report/csv?`;
+      ['fSection:section','fSubject:subject','fFrom:from','fTo:to'].forEach(p=>{const[id,k]=p.split(':');const v=document.getElementById(id).value.trim();if(v)url+=`${k}=${encodeURIComponent(v)}&`;});
+      fetch(url,{headers}).then(r=>r.blob()).then(b=>{const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='report.csv';a.click();showToast('Exported!','success');});
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=admin';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':'❌'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+  </script>
+</body>
+</html>

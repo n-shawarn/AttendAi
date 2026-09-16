@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Users — AttendAI Admin</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <style>
+    .face-capture-area { display:flex;flex-direction:column;align-items:center;gap:var(--space-md); }
+    .face-frame { width:280px;height:210px;border-radius:var(--radius-lg);overflow:hidden;background:#0a0a0a;display:flex;align-items:center;justify-content:center;border:2px solid var(--border-subtle);position:relative; }
+    .face-frame video { width:100%;height:100%;object-fit:cover; }
+    .face-frame .placeholder-icon { font-size:3rem;color:var(--text-muted); }
+    .face-status { font-size:0.85rem;color:var(--text-muted);text-align:center; }
+    .face-status.detecting { color:var(--accent-amber); }
+    .face-status.success { color:var(--accent-emerald); }
+    .capture-dots { display:flex;gap:8px;margin-top:4px; }
+    .capture-dot { width:12px;height:12px;border-radius:50%;background:var(--border-subtle);transition:background 0.3s; }
+    .capture-dot.filled { background:var(--accent-emerald); }
+    /* Custom Confirm Dialog */
+    .confirm-overlay { position:fixed;inset:0;background:rgba(0,0,0,0.7);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;z-index:2000;opacity:0;visibility:hidden;transition:opacity 0.25s ease,visibility 0.25s ease; }
+    .confirm-overlay.active { opacity:1;visibility:visible; }
+    .confirm-box { background:var(--bg-secondary);border:1px solid var(--border-subtle);border-radius:var(--radius-xl);padding:var(--space-xl);max-width:400px;width:90%;text-align:center;transform:translateY(20px) scale(0.95);transition:transform 0.3s ease; }
+    .confirm-overlay.active .confirm-box { transform:translateY(0) scale(1); }
+    .confirm-icon { font-size:2.5rem;margin-bottom:var(--space-md); }
+    .confirm-title { font-size:1.15rem;font-weight:700;margin-bottom:var(--space-sm);color:var(--text-primary); }
+    .confirm-msg { font-size:0.9rem;color:var(--text-secondary);margin-bottom:var(--space-xl);line-height:1.5; }
+    .confirm-actions { display:flex;gap:var(--space-md);justify-content:center; }
+    .confirm-actions .btn { min-width:120px; }
+  </style>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand"><div class="brand-icon" style="background:var(--gradient-rose);">🎯</div><span class="brand-text">AttendAI</span></div>
+    <nav class="sidebar-nav">
+      <a class="nav-item" href="dashboard.html"><span class="nav-icon">📊</span> Dashboard</a>
+      <a class="nav-item active" href="users.html"><span class="nav-icon">👥</span> Users</a>
+      <a class="nav-item" href="sections.html"><span class="nav-icon">🏫</span> Sections</a>
+      <a class="nav-item" href="reports.html"><span class="nav-icon">📈</span> Reports</a>
+      <a class="nav-item" href="settings.html"><span class="nav-icon">⚙️</span> Settings</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;"><span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out</div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <h1>👥 User Management</h1>
+      <div class="top-bar-actions">
+        <div class="search-bar"><span class="search-icon">🔍</span><input type="text" placeholder="Search..." id="searchInput" oninput="filterUsers()"></div>
+        <button class="btn btn-primary" onclick="document.getElementById('addModal').classList.add('active')">+ Register User</button>
+      </div>
+    </div>
+
+    <!-- Role Tabs -->
+    <div class="tabs" style="margin-bottom:var(--space-xl);">
+      <button class="tab-btn active" onclick="switchRole('student',this)">🎓 Students</button>
+      <button class="tab-btn" onclick="switchRole('teacher',this)">👨‍🏫 Teachers</button>
+    </div>
+
+    <div class="glass-card">
+      <table class="data-table">
+        <thead><tr><th>UID</th><th>Name</th><th>Email</th><th>Section/Dept</th><th>Face</th><th>Status</th><th>Actions</th></tr></thead>
+        <tbody id="tableBody"><tr><td colspan="7" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">Loading...</td></tr></tbody>
+      </table>
+    </div>
+  </main>
+
+  <!-- Register Modal -->
+  <div class="modal-overlay" id="addModal">
+    <div class="modal-content" style="max-width:500px;">
+      <div class="modal-header"><h3>Register User</h3><button class="modal-close" onclick="document.getElementById('addModal').classList.remove('active')">×</button></div>
+      <form onsubmit="registerUser(event)" style="display:flex;flex-direction:column;gap:var(--space-md);">
+        <div class="form-group"><label class="form-label">Role</label>
+          <select class="form-input form-select" id="regRole" onchange="toggleRoleFields()">
+            <option value="student">Student</option>
+            <option value="teacher">Teacher</option>
+          </select>
+        </div>
+        <div class="form-group"><label class="form-label">UID *</label><input class="form-input" id="regUid" required placeholder="e.g. STU001 / TEA001"></div>
+        <div class="form-group"><label class="form-label">Name *</label><input class="form-input" id="regName" required placeholder="Full Name"></div>
+        <div class="form-group"><label class="form-label">Password *</label><input type="password" class="form-input" id="regPass" required placeholder="Min 6 characters"></div>
+        <div class="form-group"><label class="form-label">Email</label><input type="email" class="form-input" id="regEmail" placeholder="user@email.com"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:var(--space-md);">
+          <div class="form-group" id="sectionField"><label class="form-label">Section</label><input class="form-input" id="regSection" placeholder="CSE-A"></div>
+          <div class="form-group"><label class="form-label">Department</label><input class="form-input" id="regDept" placeholder="CSE"></div>
+        </div>
+        <div class="form-group" id="semesterField"><label class="form-label">Semester</label><input class="form-input" id="regSemester" placeholder="4th"></div>
+        <div class="form-group"><label class="form-label">Phone</label><input class="form-input" id="regPhone" placeholder="+91 9876543210"></div>
+        <button type="submit" class="btn btn-primary btn-lg w-full" id="regBtn">Register</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Face Registration Modal -->
+  <div class="modal-overlay" id="faceModal">
+    <div class="modal-content" style="max-width:450px;">
+      <div class="modal-header">
+        <h3>📸 Register Face — <span id="faceUserName"></span></h3>
+        <button class="modal-close" onclick="closeFaceModal()">×</button>
+      </div>
+      <p class="text-muted text-sm" style="margin-bottom:var(--space-md);">Capture 3 photos from slightly different angles for best accuracy.</p>
+      <div class="face-capture-area">
+        <div class="face-frame" id="faceFrame">
+          <span class="placeholder-icon">👤</span>
+          <video id="faceVideo" autoplay playsinline style="display:none;"></video>
+          <canvas id="faceCanvas" style="display:none;"></canvas>
+        </div>
+        <p class="face-status" id="faceStatus">Click "Start Camera" to begin</p>
+        <div class="capture-dots">
+          <div class="capture-dot" id="dot0"></div>
+          <div class="capture-dot" id="dot1"></div>
+          <div class="capture-dot" id="dot2"></div>
+        </div>
+        <div style="display:flex;gap:var(--space-md);">
+          <button class="btn btn-primary" id="startCamBtn" onclick="startFaceCamera()">📸 Start Camera</button>
+          <button class="btn btn-success hidden" id="captureBtn" onclick="captureFace()">✅ Capture (<span id="captureCount">0</span>/3)</button>
+        </div>
+        <button class="btn btn-primary hidden w-full" id="saveFacesBtn" onclick="saveFaceData()" style="margin-top:4px;">💾 Save Face Data</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Custom Confirm Modal -->
+  <div class="confirm-overlay" id="confirmModal">
+    <div class="confirm-box">
+      <div class="confirm-icon">⚠️</div>
+      <div class="confirm-title" id="confirmTitle">Delete User?</div>
+      <div class="confirm-msg" id="confirmMsg">This action cannot be undone.</div>
+      <div class="confirm-actions">
+        <button class="btn btn-ghost" id="confirmCancel" onclick="resolveConfirm(false)">Cancel</button>
+        <button class="btn btn-danger" id="confirmOk" onclick="resolveConfirm(true)">🗑 Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API='http://localhost:5000/api';const token=localStorage.getItem('token');
+    if(!token)window.location.href='../login.html?role=admin';
+    const headers={'Authorization':`Bearer ${token}`,'Content-Type':'application/json'};
+    let currentRole='student';let allUsers=[];
+
+    const p=new URLSearchParams(window.location.search);
+    if(p.get('role')==='teacher'){currentRole='teacher';}
+
+    // Toggle section/semester fields based on role
+    function toggleRoleFields() {
+      const role = document.getElementById('regRole').value;
+      document.getElementById('sectionField').style.display = role === 'student' ? 'block' : 'none';
+      document.getElementById('semesterField').style.display = role === 'student' ? 'block' : 'none';
+    }
+
+    async function loadUsers(){
+      try{const r=await fetch(`${API}/admin/users?role=${currentRole}`,{headers});const d=await r.json();
+      if(d.success){allUsers=d.users;renderUsers(allUsers);}}catch(e){console.error(e);}
+    }
+
+    function renderUsers(users){
+      const tb = document.getElementById('tableBody');
+      if(!users.length){ tb.innerHTML='<tr><td colspan="7" style="text-align:center;padding:var(--space-2xl);color:var(--text-muted);">No users found</td></tr>'; return; }
+      tb.innerHTML = '';
+      users.forEach(u => {
+        const tr = document.createElement('tr');
+        tr.id = 'row-' + u.uid;
+        const safeName = (u.name||'').replace(/'/g, "\\'").replace(/"/g, '&quot;');
+        tr.innerHTML = `
+          <td class="font-semibold">${u.uid}</td>
+          <td style="display:flex;align-items:center;gap:8px;">
+            <img src="${API}/profile/photo/${u.uid}" alt="" style="width:32px;height:32px;border-radius:50%;object-fit:cover;border:2px solid var(--border-subtle);" onerror="this.style.display='none'">
+            ${u.name}
+          </td>
+          <td class="text-muted">${u.email||'—'}</td>
+          <td><span class="badge badge-blue">${u.section||u.department||'—'}</span></td>
+          <td>${u.face_registered?'<span class="badge badge-green">✅ Yes</span>':'<span class="badge badge-amber">❌ No</span>'}</td>
+          <td>${u.is_active?'<span class="badge badge-green">Active</span>':'<span class="badge badge-red">Inactive</span>'}</td>
+          <td style="white-space:nowrap;"></td>`;
+        const actionsCell = tr.querySelector('td:last-child');
+
+        const faceBtn = document.createElement('button');
+        faceBtn.className = 'btn btn-ghost btn-sm';
+        faceBtn.title = 'Register/Update Face';
+        faceBtn.textContent = '📸';
+        faceBtn.addEventListener('click', () => showFaceModal(u.uid, u.name));
+        actionsCell.appendChild(faceBtn);
+
+        const toggleBtn = document.createElement('button');
+        toggleBtn.className = 'btn btn-ghost btn-sm';
+        toggleBtn.title = u.is_active ? 'Deactivate' : 'Activate';
+        toggleBtn.textContent = u.is_active ? '🚫' : '✅';
+        toggleBtn.addEventListener('click', () => toggleUser(u.uid));
+        actionsCell.appendChild(toggleBtn);
+
+        const delBtn = document.createElement('button');
+        delBtn.className = 'btn btn-ghost btn-sm';
+        delBtn.title = 'Delete';
+        delBtn.style.color = 'var(--accent-rose)';
+        delBtn.textContent = '🗑';
+        delBtn.addEventListener('click', () => deleteUser(u.uid, tr));
+        actionsCell.appendChild(delBtn);
+
+        tb.appendChild(tr);
+      });
+    }
+
+    function switchRole(role,btn){currentRole=role;document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');loadUsers();}
+    function filterUsers(){const q=document.getElementById('searchInput').value.toLowerCase();renderUsers(allUsers.filter(u=>u.name.toLowerCase().includes(q)||u.uid.toLowerCase().includes(q)));}
+
+    async function registerUser(e){
+      e.preventDefault();
+      const btn = document.getElementById('regBtn');
+      btn.disabled=true; btn.textContent='Registering...';
+      try{const r=await fetch(`${API}/auth/register`,{method:'POST',headers,body:JSON.stringify({
+        role:document.getElementById('regRole').value,
+        uid:document.getElementById('regUid').value.trim(),
+        name:document.getElementById('regName').value.trim(),
+        password:document.getElementById('regPass').value,
+        email:document.getElementById('regEmail').value,
+        phone:document.getElementById('regPhone').value,
+        section:document.getElementById('regSection').value,
+        semester:document.getElementById('regSemester').value,
+        department:document.getElementById('regDept').value
+      })});const d=await r.json();
+      if(d.success){showToast('User registered successfully!','success');document.getElementById('addModal').classList.remove('active');loadUsers();}
+      else showToast(d.message,'error');}catch(e){showToast('Error','error');}
+      btn.disabled=false; btn.textContent='Register';
+    }
+
+    async function toggleUser(uid){
+      try{
+        const r = await fetch(`${API}/admin/users/${uid}/toggle`,{method:'POST',headers,body:JSON.stringify({role:currentRole})});
+        const d = await r.json();
+        if(d.success){ showToast('User status toggled','success'); loadUsers(); }
+        else showToast(d.message||'Toggle failed','error');
+      }catch(e){showToast('Error','error');}
+    }
+
+    // ── Custom Confirm Dialog (replaces native confirm) ──
+    let _confirmResolve = null;
+    function showConfirm(title, msg) {
+      return new Promise(resolve => {
+        _confirmResolve = resolve;
+        document.getElementById('confirmTitle').textContent = title;
+        document.getElementById('confirmMsg').textContent = msg;
+        document.getElementById('confirmModal').classList.add('active');
+      });
+    }
+    function resolveConfirm(value) {
+      document.getElementById('confirmModal').classList.remove('active');
+      if (_confirmResolve) { _confirmResolve(value); _confirmResolve = null; }
+    }
+    // Close on overlay click
+    document.getElementById('confirmModal').addEventListener('click', function(e) {
+      if (e.target === this) resolveConfirm(false);
+    });
+    // Close on Escape key
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape' && document.getElementById('confirmModal').classList.contains('active')) resolveConfirm(false);
+    });
+
+    async function deleteUser(uid, rowElement){
+      const confirmed = await showConfirm('Delete ' + uid + '?', 'This will permanently remove this user and all their data. This cannot be undone.');
+      if(!confirmed) return;
+      // Immediately fade out the row for visual feedback
+      if(rowElement) rowElement.style.opacity = '0.3';
+      try{
+        const res = await fetch(`${API}/admin/users/${uid}?role=${currentRole}`, {
+          method: 'DELETE',
+          headers: {'Authorization': 'Bearer ' + token}
+        });
+        const data = await res.json();
+        if(data.success){
+          showToast('User ' + uid + ' deleted','success');
+          // Remove row with animation
+          if(rowElement) {
+            rowElement.style.transition = 'opacity 0.3s, transform 0.3s';
+            rowElement.style.opacity = '0';
+            rowElement.style.transform = 'translateX(20px)';
+            setTimeout(() => rowElement.remove(), 300);
+          }
+          // Also remove from allUsers array
+          allUsers = allUsers.filter(u => u.uid !== uid);
+        } else {
+          showToast(data.message || 'Delete failed','error');
+          if(rowElement) rowElement.style.opacity = '1';
+        }
+      }catch(e){
+        console.error('Delete error:', e);
+        showToast('Error deleting user','error');
+        if(rowElement) rowElement.style.opacity = '1';
+      }
+    }
+
+    // ── Face Registration (works for both students AND teachers) ──
+    let faceStream = null;
+    let faceImages = [];
+    let faceTargetUid = '';
+
+    function showFaceModal(uid, name) {
+      faceTargetUid = uid;
+      faceImages = [];
+      document.getElementById('faceUserName').textContent = `${name} (${uid})`;
+      document.getElementById('captureCount').textContent = '0';
+      document.getElementById('faceStatus').textContent = 'Click "Start Camera" to begin';
+      document.getElementById('faceStatus').className = 'face-status';
+      [0,1,2].forEach(i => document.getElementById('dot'+i).classList.remove('filled'));
+      document.getElementById('startCamBtn').classList.remove('hidden');
+      document.getElementById('captureBtn').classList.add('hidden');
+      document.getElementById('saveFacesBtn').classList.add('hidden');
+      document.querySelector('#faceFrame .placeholder-icon').style.display = '';
+      document.getElementById('faceVideo').style.display = 'none';
+      document.getElementById('faceModal').classList.add('active');
+    }
+
+    function closeFaceModal() {
+      if (faceStream) { faceStream.getTracks().forEach(t=>t.stop()); faceStream=null; }
+      document.getElementById('faceVideo').style.display='none';
+      document.getElementById('faceVideo').srcObject=null;
+      document.getElementById('faceModal').classList.remove('active');
+    }
+
+    async function startFaceCamera() {
+      try {
+        faceStream = await navigator.mediaDevices.getUserMedia({video:{width:640,height:480,facingMode:'user'}});
+        const video = document.getElementById('faceVideo');
+        video.srcObject = faceStream;
+        video.style.display = 'block';
+        document.querySelector('#faceFrame .placeholder-icon').style.display = 'none';
+        document.getElementById('startCamBtn').classList.add('hidden');
+        document.getElementById('captureBtn').classList.remove('hidden');
+        document.getElementById('faceStatus').textContent = 'Position face centrally, then click Capture';
+        document.getElementById('faceStatus').className = 'face-status detecting';
+      } catch(e) { showToast('Camera access denied', 'error'); }
+    }
+
+    function captureFace() {
+      const video = document.getElementById('faceVideo');
+      const canvas = document.getElementById('faceCanvas');
+      canvas.width = video.videoWidth; canvas.height = video.videoHeight;
+      canvas.getContext('2d').drawImage(video, 0, 0);
+      faceImages.push(canvas.toDataURL('image/jpeg', 0.9));
+      document.getElementById('captureCount').textContent = faceImages.length;
+      document.getElementById('dot'+(faceImages.length-1)).classList.add('filled');
+
+      if (faceImages.length < 3) {
+        document.getElementById('faceStatus').textContent = `Captured ${faceImages.length}/3 — turn head slightly, then capture again`;
+      } else {
+        document.getElementById('faceStatus').textContent = 'All 3 captures done! Click Save to register.';
+        document.getElementById('faceStatus').className = 'face-status success';
+        document.getElementById('captureBtn').classList.add('hidden');
+        document.getElementById('saveFacesBtn').classList.remove('hidden');
+      }
+    }
+
+    async function saveFaceData() {
+      const btn = document.getElementById('saveFacesBtn');
+      btn.disabled = true; btn.textContent = '⏳ Saving...';
+      try {
+        const res = await fetch(`${API}/auth/face-register`, {
+          method: 'POST', headers,
+          body: JSON.stringify({ uid: faceTargetUid, role: currentRole, images: faceImages })
+        });
+        const data = await res.json();
+        if (data.success) {
+          showToast(`Face registered for ${faceTargetUid}!`, 'success');
+          closeFaceModal();
+          loadUsers();
+        } else {
+          showToast(data.message, 'error');
+        }
+      } catch(e) { showToast('Server error', 'error'); }
+      btn.disabled = false; btn.textContent = '💾 Save Face Data';
+    }
+
+    function logout(){localStorage.clear();window.location.href='../login.html?role=admin';}
+    function showToast(m,t='info'){const c=document.getElementById('toastContainer');const e=document.createElement('div');e.className=`toast ${t}`;e.innerHTML=`<span>${t==='success'?'✅':'❌'}</span><span style="flex:1;font-size:0.9rem;">${m}</span>`;c.appendChild(e);setTimeout(()=>{e.style.opacity='0';setTimeout(()=>e.remove(),300);},4000);}
+
+    loadUsers();
+    if(currentRole==='teacher'){document.querySelectorAll('.tab-btn')[1].click();}
+  </script>
+</body>
+</html>

@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard — AttendAI</title>
+  <link rel="stylesheet" href="../css/main.css">
+  <link rel="stylesheet" href="../css/dashboard.css">
+  <link rel="stylesheet" href="../css/components.css">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+  <aside class="sidebar">
+    <div class="sidebar-brand">
+      <div class="brand-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6);width:36px;height:36px;border-radius:10px;display:flex;align-items:center;justify-content:center;"><i class="fas fa-brain" style="color:#fff;font-size:1rem;"></i></div>
+      <span class="brand-text">AttendAI</span>
+    </div>
+    <nav class="sidebar-nav">
+      <a class="nav-item active" href="dashboard.html"><span class="nav-icon"><i class="fas fa-th-large"></i></span> Overview</a>
+      <a class="nav-item" href="attendance.html"><span class="nav-icon"><i class="fas fa-calendar-check"></i></span> Attendance</a>
+      <a class="nav-item" href="assignments.html"><span class="nav-icon"><i class="fas fa-file-alt"></i></span> Assignments</a>
+      <a class="nav-item" href="exams.html"><span class="nav-icon"><i class="fas fa-clipboard-check"></i></span> Exams</a>
+      <a class="nav-item" href="profile.html"><span class="nav-icon"><i class="fas fa-user-circle"></i></span> Profile</a>
+    </nav>
+    <div style="border-top:1px solid var(--border-subtle);padding-top:var(--space-md);margin-top:auto;">
+      <div class="nav-item" onclick="logout()" style="color:var(--accent-rose);cursor:pointer;">
+        <span class="nav-icon"><i class="fas fa-sign-out-alt"></i></span> Sign Out
+      </div>
+    </div>
+  </aside>
+
+  <main class="main-content">
+    <div class="top-bar">
+      <div>
+        <h1 id="greeting">Hello</h1>
+        <p class="text-muted text-sm" id="dateDisplay"></p>
+      </div>
+      <div class="top-bar-actions">
+        <div class="avatar" id="userAvatar">S</div>
+      </div>
+    </div>
+
+    <!-- Welcome Card with Attendance Ring -->
+    <div class="glass-card animate-fadeInUp" style="display:flex;align-items:center;gap:var(--space-xl);margin-bottom:var(--space-xl);padding:var(--space-xl);">
+      <div class="progress-ring">
+        <svg width="120" height="120">
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--border-subtle)" stroke-width="8"/>
+          <circle cx="60" cy="60" r="52" fill="none" stroke="var(--accent-emerald)" stroke-width="8"
+                  stroke-dasharray="326.7" stroke-dashoffset="326.7" stroke-linecap="round" id="attendanceRing"/>
+        </svg>
+        <span class="progress-text" style="font-size:1.4rem;" id="attendancePercent">—</span>
+      </div>
+      <div>
+        <h2 style="font-size:1.4rem;margin-bottom:4px;">Overall Attendance</h2>
+        <p class="text-muted" id="attendanceSummary">Loading your records...</p>
+        <div style="display:flex;gap:var(--space-lg);margin-top:var(--space-md);">
+          <div><span style="font-weight:700;color:var(--accent-emerald);" id="presentCount">0</span> <span class="text-muted text-sm">Present</span></div>
+          <div><span style="font-weight:700;color:var(--accent-rose);" id="absentCount">0</span> <span class="text-muted text-sm">Absent</span></div>
+          <div><span style="font-weight:700;color:var(--accent-blue);" id="totalClasses">0</span> <span class="text-muted text-sm">Total</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dashboard-grid-2">
+      <!-- Recent Attendance -->
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.2s;">
+        <div class="section-header">
+          <h2>Recent Attendance</h2>
+          <a href="attendance.html" class="btn btn-ghost btn-sm">View All</a>
+        </div>
+        <div id="recentAttendance">
+          <div class="empty-state" style="padding:var(--space-xl);">
+            <div class="empty-icon"><i class="fas fa-clipboard-list" style="font-size:2rem;color:var(--text-muted);opacity:0.4;"></i></div>
+            <h3>No records yet</h3>
+            <p>Your attendance will appear here</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Assignments -->
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.3s;">
+        <div class="section-header">
+          <h2>Recent Assignments</h2>
+          <a href="assignments.html" class="btn btn-ghost btn-sm">View All</a>
+        </div>
+        <div id="recentAssignments">
+          <div class="empty-state" style="padding:var(--space-xl);">
+            <div class="empty-icon"><i class="fas fa-book-open" style="font-size:2rem;color:var(--text-muted);opacity:0.4;"></i></div>
+            <h3>No assignments</h3>
+            <p>Assignments from teachers will show here</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Attendance Calendar & Subject Breakdown -->
+    <div class="dashboard-grid-2" style="margin-top:var(--space-xl);">
+      <!-- Calendar View -->
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.4s;">
+        <div class="section-header">
+          <h2><i class="fas fa-calendar-alt" style="color:var(--accent-blue);margin-right:6px;"></i> Attendance Calendar</h2>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <button class="btn btn-ghost btn-sm" onclick="changeMonth(-1)">◀</button>
+            <span id="calendarMonth" style="font-weight:600;min-width:120px;text-align:center;"></span>
+            <button class="btn btn-ghost btn-sm" onclick="changeMonth(1)">▶</button>
+          </div>
+        </div>
+        <div class="calendar-grid" id="calendarGrid"></div>
+        <div style="display:flex;gap:var(--space-lg);margin-top:var(--space-md);justify-content:center;">
+          <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;"><div style="width:12px;height:12px;border-radius:4px;background:rgba(16,185,129,0.3);border:1px solid rgba(16,185,129,0.5);"></div> Present</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;"><div style="width:12px;height:12px;border-radius:4px;background:rgba(244,63,94,0.3);border:1px solid rgba(244,63,94,0.5);"></div> Absent</div>
+          <div style="display:flex;align-items:center;gap:6px;font-size:0.75rem;"><div style="width:12px;height:12px;border-radius:4px;background:var(--border-subtle);"></div> No Class</div>
+        </div>
+      </div>
+
+      <!-- Subject Breakdown -->
+      <div class="glass-card animate-fadeInUp" style="animation-delay:0.5s;">
+        <div class="section-header"><h2><i class="fas fa-chart-pie" style="color:var(--accent-purple);margin-right:6px;"></i> Subject Breakdown</h2></div>
+        <div id="subjectBreakdown">
+          <div class="empty-state" style="padding:var(--space-xl);">
+            <div class="empty-icon"><i class="fas fa-chart-pie" style="font-size:2rem;color:var(--text-muted);opacity:0.4;"></i></div>
+            <h3>No data yet</h3>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script>
+    const API = 'http://localhost:5000/api';
+    const token = localStorage.getItem('token');
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (!token || !user.uid) { window.location.href = '../login.html?role=student'; }
+
+    const hour = new Date().getHours();
+    const greet = hour < 12 ? 'Good Morning' : hour < 17 ? 'Good Afternoon' : 'Good Evening';
+    document.getElementById('greeting').textContent = `${greet}, ${user.name || 'Student'}`;
+    document.getElementById('dateDisplay').textContent = new Date().toLocaleDateString('en-US', {weekday:'long',year:'numeric',month:'long',day:'numeric'});
+    document.getElementById('userAvatar').textContent = (user.name||'S')[0].toUpperCase();
+
+    const headers = {'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json'};
+
+    let allRecords = [];
+    let currentCalMonth = new Date().getMonth();
+    let currentCalYear = new Date().getFullYear();
+
+    async function loadDashboard() {
+      try {
+        // Attendance
+        const aRes = await fetch(`${API}/attendance/student/${user.uid}`, {headers});
+        const aData = await aRes.json();
+        if (aData.success) {
+          allRecords = aData.records;
+          const records = aData.records;
+          const present = records.filter(r => r.status === 'present').length;
+          const absent = records.filter(r => r.status === 'absent').length;
+          const total = records.length;
+          const pct = total > 0 ? Math.round((present / total) * 100) : 0;
+
+          document.getElementById('presentCount').textContent = present;
+          document.getElementById('absentCount').textContent = absent;
+          document.getElementById('totalClasses').textContent = total;
+          document.getElementById('attendancePercent').textContent = total > 0 ? `${pct}%` : '—';
+          document.getElementById('attendanceSummary').textContent = total > 0
+            ? `${present} present out of ${total} classes`
+            : 'No attendance records found yet';
+
+          // Animate ring
+          const ring = document.getElementById('attendanceRing');
+          const circumference = 2 * Math.PI * 52;
+          ring.style.transition = 'stroke-dashoffset 1.5s ease';
+          ring.style.strokeDashoffset = circumference - (pct / 100) * circumference;
+          if (pct < 75) ring.style.stroke = 'var(--accent-rose)';
+          else if (pct < 85) ring.style.stroke = 'var(--accent-amber)';
+
+          // Recent records
+          if (records.length > 0) {
+            document.getElementById('recentAttendance').innerHTML = records.slice(0, 8).map(r => `
+              <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-bottom:8px;">
+                <div>
+                  <div style="font-weight:600;font-size:0.9rem;">${r.subject || 'Class'}</div>
+                  <div style="font-size:0.75rem;color:var(--text-muted);">${r.date} • ${r.section || ''}</div>
+                </div>
+                <span class="badge ${r.status==='present'?'badge-green':'badge-red'}">${r.status}</span>
+              </div>
+            `).join('');
+          }
+
+          // Render calendar and subject breakdown
+          renderCalendar();
+          renderSubjectBreakdown(records);
+        }
+
+        // Assignments
+        const asRes = await fetch(`${API}/assignments`, {headers});
+        const asData = await asRes.json();
+        if (asData.success && asData.assignments.length > 0) {
+          document.getElementById('recentAssignments').innerHTML = asData.assignments.slice(0, 5).map(a => `
+            <div style="padding:12px;border-radius:var(--radius-md);border:1px solid var(--border-subtle);margin-bottom:8px;">
+              <div style="font-weight:600;font-size:0.9rem;">${a.title}</div>
+              <div style="font-size:0.8rem;color:var(--text-muted);margin-top:4px;">${a.subject || ''} ${a.due_date ? '• Due: '+a.due_date : ''}</div>
+              ${a.description ? `<div style="font-size:0.8rem;color:var(--text-secondary);margin-top:6px;">${a.description}</div>` : ''}
+            </div>
+          `).join('');
+        }
+      } catch(e) { console.error(e); }
+    }
+
+    // ── Calendar Rendering ──
+    function renderCalendar() {
+      const grid = document.getElementById('calendarGrid');
+      const monthNames = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      document.getElementById('calendarMonth').textContent = `${monthNames[currentCalMonth]} ${currentCalYear}`;
+
+      // Day headers
+      const dayHeaders = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+      let html = dayHeaders.map(d => `<div class="calendar-header">${d}</div>`).join('');
+
+      // Build date->status map for this month
+      const dateMap = {};
+      allRecords.forEach(r => {
+        const d = r.date; // "YYYY-MM-DD"
+        if (!dateMap[d]) dateMap[d] = [];
+        dateMap[d].push(r.status);
+      });
+
+      const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+      const daysInMonth = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+      const today = new Date();
+
+      // Empty cells before first day
+      for (let i = 0; i < firstDay; i++) {
+        html += '<div class="calendar-day no-class"></div>';
+      }
+
+      for (let day = 1; day <= daysInMonth; day++) {
+        const dateStr = `${currentCalYear}-${String(currentCalMonth+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        const statuses = dateMap[dateStr] || [];
+        const isToday = today.getFullYear() === currentCalYear && today.getMonth() === currentCalMonth && today.getDate() === day;
+
+        let cls = 'calendar-day';
+        if (isToday) cls += ' today';
+        if (statuses.includes('present')) cls += ' present';
+        else if (statuses.includes('absent')) cls += ' absent';
+        else cls += ' no-class';
+
+        html += `<div class="${cls}" title="${dateStr}: ${statuses.join(', ') || 'No class'}">${day}</div>`;
+      }
+
+      grid.innerHTML = html;
+    }
+
+    function changeMonth(delta) {
+      currentCalMonth += delta;
+      if (currentCalMonth < 0) { currentCalMonth = 11; currentCalYear--; }
+      if (currentCalMonth > 11) { currentCalMonth = 0; currentCalYear++; }
+      renderCalendar();
+    }
+
+    // ── Subject Breakdown Chart ──
+    function renderSubjectBreakdown(records) {
+      if (!records || records.length === 0) return;
+
+      const subjectMap = {};
+      records.forEach(r => {
+        const subj = r.subject || 'Unknown';
+        if (!subjectMap[subj]) subjectMap[subj] = {present: 0, absent: 0, total: 0};
+        subjectMap[subj].total++;
+        if (r.status === 'present') subjectMap[subj].present++;
+        else subjectMap[subj].absent++;
+      });
+
+      const colors = ['var(--accent-blue)', 'var(--accent-emerald)', 'var(--accent-purple)', 'var(--accent-amber)', 'var(--accent-cyan)', 'var(--accent-rose)'];
+
+      let html = Object.entries(subjectMap).map(([subj, data], i) => {
+        const pct = Math.round((data.present / data.total) * 100);
+        const color = colors[i % colors.length];
+        const barColor = pct >= 75 ? 'var(--accent-emerald)' : pct >= 50 ? 'var(--accent-amber)' : 'var(--accent-rose)';
+        return `
+          <div style="margin-bottom:var(--space-md);">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+              <span style="font-weight:600;font-size:0.9rem;">${subj}</span>
+              <span style="font-size:0.8rem;color:var(--text-muted);">${data.present}/${data.total} (${pct}%)</span>
+            </div>
+            <div class="progress-bar">
+              <div class="progress-fill" style="width:${pct}%;background:${barColor};"></div>
+            </div>
+          </div>`;
+      }).join('');
+
+      document.getElementById('subjectBreakdown').innerHTML = html;
+    }
+
+    loadDashboard();
+
+    function logout() {
+      localStorage.clear();
+      window.location.href = '../login.html?role=student';
+    }
+  </script>
+</body>
+</html>
